@@ -1,0 +1,65 @@
+<UserControl x:Class="CoffeeShop.Wpf.Views.CauHinhHeThongView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="600"
+             d:DesignWidth="760">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+        <Grid>
+            <Border Style="{StaticResource CardPanel}"
+                Width="700"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="Cấu hình hệ thống" />
+                    <TextBlock Margin="0,6,0,0"
+                           Foreground="{DynamicResource MutedTextBrush}"
+                           Text="Thiết lập thông tin quán dùng chung cho hóa đơn, báo cáo và xuất/in." />
+
+                    <TextBlock Margin="0,12,0,0" FontWeight="SemiBold" Text="Tên quán" />
+                    <TextBox Text="{Binding TenQuan, UpdateSourceTrigger=PropertyChanged}" MaxLength="200" />
+
+                    <TextBlock Margin="0,8,0,0" FontWeight="SemiBold" Text="Địa chỉ" />
+                    <TextBox Text="{Binding DiaChi, UpdateSourceTrigger=PropertyChanged}" MaxLength="300" />
+
+                    <TextBlock Margin="0,8,0,0" FontWeight="SemiBold" Text="Số điện thoại" />
+                    <TextBox Text="{Binding SoDienThoai, UpdateSourceTrigger=PropertyChanged}" MaxLength="20" />
+
+                    <TextBlock Margin="0,8,0,0" FontWeight="SemiBold" Text="Footer hóa đơn / báo cáo" />
+                    <TextBox Height="70"
+                         AcceptsReturn="True"
+                         VerticalScrollBarVisibility="Auto"
+                         Text="{Binding FooterHoaDon, UpdateSourceTrigger=PropertyChanged}"
+                         MaxLength="500" />
+
+                    <TextBlock Margin="0,8,0,0" FontWeight="SemiBold" Text="Đường dẫn logo (nếu có)" />
+                    <TextBox Text="{Binding LogoPath, UpdateSourceTrigger=PropertyChanged}" MaxLength="500" />
+
+                    <WrapPanel Margin="0,14,0,0">
+                        <Button Width="130"
+                            Content="Lưu cấu hình"
+                            Style="{StaticResource ButtonPrimary}"
+                            Command="{Binding LuuCommand}" />
+                        <Button Width="100"
+                            Margin="8,0,0,0"
+                            Content="Tải lại"
+                            Style="{StaticResource ButtonSecondary}"
+                            Command="{Binding TaiLaiCommand}" />
+                    </WrapPanel>
+
+                    <TextBlock Margin="0,8,0,0"
+                           Foreground="{DynamicResource DangerBrush}"
+                           TextWrapping="Wrap"
+                           Text="{Binding ErrorMessage}" />
+                    <TextBlock Margin="0,4,0,0"
+                           Foreground="{DynamicResource SuccessBrush}"
+                           TextWrapping="Wrap"
+                           Text="{Binding SuccessMessage}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

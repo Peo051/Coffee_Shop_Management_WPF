@@ -1,0 +1,195 @@
+<UserControl x:Class="CoffeeShop.Wpf.Views.QuanLyTaiKhoanView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:infra="clr-namespace:CoffeeShop.Wpf.Infrastructure"
+             mc:Ignorable="d"
+             d:DesignHeight="800"
+             d:DesignWidth="980">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="300" />
+            </Grid.RowDefinitions>
+
+            <Border Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="Quản lý tài khoản" />
+                    <TextBlock Margin="0,6,0,0"
+                           Foreground="{DynamicResource MutedTextBrush}"
+                           Text="Tạo tài khoản mới, khóa hoặc mở khóa tài khoản theo phân quyền." />
+
+                    <WrapPanel Margin="0,12,0,0">
+                        <TextBlock VerticalAlignment="Center"
+                               FontWeight="SemiBold"
+                               Text="Từ khóa" />
+                        <TextBox Width="260"
+                             Margin="8,0,0,0"
+                             Text="{Binding TuKhoa, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Margin="8,0,0,0"
+                            Width="110"
+                            Content="Tìm kiếm"
+                            Style="{StaticResource ButtonPrimary}"
+                            Command="{Binding TimKiemCommand}" />
+                        <Button Margin="8,0,0,0"
+                            Width="130"
+                            Content="Tạo tài khoản mới"
+                            Style="{StaticResource ButtonPrimary}"
+                            Command="{Binding TaoMoiCommand}" />
+                    </WrapPanel>
+
+                    <WrapPanel Margin="0,10,0,0">
+                        <Button Width="130"
+                            Content="Khóa tài khoản"
+                            Style="{StaticResource ButtonDanger}"
+                            Command="{Binding KhoaTaiKhoanCommand}" />
+                        <Button Width="130"
+                            Margin="8,0,0,0"
+                            Content="Mở khóa"
+                            Style="{StaticResource ButtonSecondary}"
+                            Command="{Binding MoKhoaTaiKhoanCommand}" />
+                        <Button Width="130"
+                            Margin="8,0,0,0"
+                            Content="Reset mật khẩu"
+                            Style="{StaticResource ButtonWarning}"
+                            Command="{Binding ResetMatKhauCommand}" />
+                    </WrapPanel>
+
+                    <TextBlock Margin="0,8,0,0"
+                           Foreground="{DynamicResource DangerBrush}"
+                           TextWrapping="Wrap"
+                           Text="{Binding ErrorMessage}" />
+                    <TextBlock Margin="0,4,0,0"
+                           Foreground="{DynamicResource SuccessBrush}"
+                           TextWrapping="Wrap"
+                           Text="{Binding SuccessMessage}" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2"
+                Style="{StaticResource CardPanel}"
+                Visibility="{Binding IsFormVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="140" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="20" />
+                        <ColumnDefinition Width="140" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                           Grid.Column="0"
+                           Grid.ColumnSpan="5"
+                           Style="{StaticResource SectionHeader}"
+                           Text="Tạo tài khoản mới" />
+
+                    <TextBlock Grid.Row="2"
+                           Grid.Column="0"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Text="Tên đăng nhập" />
+                    <TextBox Grid.Row="2"
+                         Grid.Column="1"
+                         Text="{Binding TenDangNhapMoi, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="2"
+                           Grid.Column="3"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Text="Họ tên" />
+                    <TextBox Grid.Row="2"
+                         Grid.Column="4"
+                         Text="{Binding HoTenMoi, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="4"
+                           Grid.Column="0"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Text="Mật khẩu" />
+                    <PasswordBox Grid.Row="4"
+                             Grid.Column="1"
+                             infra:PasswordBoxHelper.Attach="True"
+                             infra:PasswordBoxHelper.BoundPassword="{Binding MatKhauMoi, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="10,7" />
+
+                    <TextBlock Grid.Row="4"
+                           Grid.Column="3"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Text="Xác nhận mật khẩu" />
+                    <PasswordBox Grid.Row="4"
+                             Grid.Column="4"
+                             infra:PasswordBoxHelper.Attach="True"
+                             infra:PasswordBoxHelper.BoundPassword="{Binding XacNhanMatKhauMoi, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="10,7" />
+
+                    <TextBlock Grid.Row="6"
+                           Grid.Column="0"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Text="Vai trò" />
+                    <ComboBox Grid.Row="6"
+                          Grid.Column="1"
+                          ItemsSource="{Binding DanhSachVaiTro}"
+                          SelectedItem="{Binding SelectedVaiTro, Mode=TwoWay}"
+                          DisplayMemberPath="TenVaiTro" />
+
+                    <WrapPanel Grid.Row="8"
+                           Grid.Column="0"
+                           Grid.ColumnSpan="5">
+                        <Button Width="110"
+                            Content="Lưu"
+                            Style="{StaticResource ButtonPrimary}"
+                            Command="{Binding LuuCommand}" />
+                        <Button Width="110"
+                            Margin="8,0,0,0"
+                            Content="Hủy"
+                            Style="{StaticResource ButtonSecondary}"
+                            Command="{Binding HuyCommand}" />
+                    </WrapPanel>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="4" Style="{StaticResource CardPanel}">
+                <DataGrid ItemsSource="{Binding DanhSachTaiKhoan}"
+                      SelectedItem="{Binding SelectedTaiKhoan, Mode=TwoWay}"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"                          
+                      >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="ID" Binding="{Binding NguoiDungId}" Width="70" />
+                        <DataGridTextColumn Header="Tên đăng nhập" Binding="{Binding TenDangNhap}" Width="140" />
+                        <DataGridTextColumn Header="Họ tên" Binding="{Binding HoTen}" Width="2*" />
+                        <DataGridTextColumn Header="Vai trò" Binding="{Binding TenVaiTro}" Width="140" />
+                        <DataGridCheckBoxColumn Header="Hoạt động" Binding="{Binding IsActive}" Width="90" />
+                        <DataGridTextColumn Header="Ngày tạo" Binding="{Binding CreatedAt, StringFormat=dd/MM/yyyy HH:mm}" Width="150" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>
+

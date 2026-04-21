@@ -1,0 +1,164 @@
+<UserControl x:Class="CoffeeShop.Wpf.Views.MainShellView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="860"
+             d:DesignWidth="1480">
+    <UserControl.Resources>
+        <CollectionViewSource x:Key="GroupedMenuItems" Source="{Binding MenuItems}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="GroupName" />
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+    </UserControl.Resources>
+
+    <Grid Margin="14">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280" />
+            <ColumnDefinition Width="14" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0"
+                Background="{DynamicResource SidebarBackgroundBrush}"
+                BorderBrush="#2FFFFFFF"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="14">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="14" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="14" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="GIBOR COFFEE"
+                               FontSize="24"
+                               FontWeight="SemiBold"
+                               Foreground="White" />
+                    <TextBlock Margin="0,4,0,0"
+                               Style="{StaticResource PageSubtitleText}"
+                               Foreground="{DynamicResource SidebarMutedTextBrush}"
+                               Text="Hệ thống quản lý quán cà phê" />
+                </StackPanel>
+
+                <Border Grid.Row="2"
+                        Background="#24FFFFFF"
+                        BorderBrush="#36FFFFFF"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="4" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Phiên đăng nhập"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SidebarMutedTextBrush}" />
+                        <TextBlock Grid.Row="2"
+                                   Text="{Binding WelcomeText}"
+                                   Foreground="White"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap" />
+                        <Button Grid.Row="4"
+                                Content="Đăng xuất"
+                                Command="{Binding DangXuatCommand}"
+                                Style="{StaticResource ButtonDanger}" />
+                    </Grid>
+                </Border>
+
+                <Grid Grid.Row="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="8" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Menu chức năng"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource SidebarMutedTextBrush}" />
+
+                    <ListBox Grid.Row="2"
+                             Style="{StaticResource SidebarListBox}"
+                             ItemsSource="{Binding Source={StaticResource GroupedMenuItems}}"
+                             SelectedItem="{Binding SelectedMenuItem, Mode=TwoWay}"
+                             ItemContainerStyle="{StaticResource SidebarMenuItemStyle}"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             VirtualizingStackPanel.IsVirtualizing="True"
+                             VirtualizingStackPanel.VirtualizationMode="Recycling">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DisplayName}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Foreground}" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Style="{StaticResource SidebarGroupHeaderText}" Text="{Binding Name}" />
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                            </GroupStyle>
+                        </ListBox.GroupStyle>
+                    </ListBox>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Style="{StaticResource CardPanel}" Padding="18">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource PageTitleText}" Text="{Binding CurrentModuleTitle}" />
+                        <TextBlock Margin="0,6,0,0"
+                                   Style="{StaticResource PageSubtitleText}"
+                                   Text="{Binding CurrentModuleDescription}" />
+                    </StackPanel>
+
+                    <Border Grid.Column="1"
+                            Style="{StaticResource StatusBadgeSuccess}"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="Đang hoạt động"
+                                   Foreground="{DynamicResource SuccessBrush}"
+                                   FontWeight="SemiBold" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Style="{StaticResource CardPanel}"
+                    Padding="0"
+                    Background="Transparent"
+                    BorderThickness="0">
+                <!-- ScrollViewer cho vùng nội dung: cuộn khi cửa sổ nhỏ -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <ContentControl Content="{Binding CurrentContentViewModel}" />
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

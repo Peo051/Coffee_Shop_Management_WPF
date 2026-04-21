@@ -1,0 +1,97 @@
+﻿<UserControl x:Class="CoffeeShop.Wpf.Views.TopSanPhamBanChayView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="450"
+             d:DesignWidth="800">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="16" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Background="{DynamicResource CardBackgroundBrush}"
+                    CornerRadius="10"
+                    Padding="16">
+                <StackPanel>
+                    <TextBlock Text="Top sản phẩm bán chạy"
+                               FontSize="20"
+                               FontWeight="SemiBold" />
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <DatePicker Grid.Column="0"
+                                    SelectedDate="{Binding FromDate, Mode=TwoWay}" />
+
+                        <DatePicker Grid.Column="2"
+                                    SelectedDate="{Binding ToDate, Mode=TwoWay}" />
+
+                        <TextBox Grid.Column="4"
+                                 Padding="10,6"
+                                 Text="{Binding TopN, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <Button Grid.Column="6"
+                                Width="100"
+                                Content="Tải top"
+                                Command="{Binding TaiTopCommand}" />
+
+                        <Button Grid.Column="8"
+                                Width="95"
+                                Content="Làm mới"
+                                Command="{Binding LamMoiCommand}"
+                                Background="{DynamicResource SecondaryBrush}"
+                                BorderBrush="{DynamicResource SecondaryBrush}"
+                                Foreground="{DynamicResource SecondaryTextBrush}" />
+                    </Grid>
+
+                    <TextBlock Margin="0,10,0,0"
+                               Foreground="{DynamicResource DangerBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding ErrorMessage}" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{DynamicResource SuccessBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding SuccessMessage}" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    CornerRadius="10"
+                    Padding="12">
+                <DataGrid ItemsSource="{Binding TopSanPhamBanChay}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Mã món" Binding="{Binding MonId}" Width="80" />
+                        <DataGridTextColumn Header="Tên món" Binding="{Binding TenMon}" Width="*" />
+                        <DataGridTextColumn Header="Tổng SL bán" Binding="{Binding TongSoLuongBan}" Width="120" />
+                        <DataGridTextColumn Header="Số hóa đơn" Binding="{Binding SoHoaDon}" Width="110" />
+                        <DataGridTextColumn Header="Tổng doanh thu" Binding="{Binding TongDoanhThu, StringFormat=N0}" Width="130" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>
+

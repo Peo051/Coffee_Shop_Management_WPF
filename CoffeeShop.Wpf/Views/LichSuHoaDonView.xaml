@@ -1,0 +1,205 @@
+<UserControl x:Class="CoffeeShop.Wpf.Views.LichSuHoaDonView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="800"
+             d:DesignWidth="1250">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="16" />
+                <RowDefinition Height="300" />
+                <RowDefinition Height="16" />
+                <RowDefinition Height="300" />
+            </Grid.RowDefinitions>
+
+            <!-- Panel tìm kiếm -->
+            <Border Background="{DynamicResource CardBackgroundBrush}"
+                CornerRadius="10"
+                Padding="16">
+                <StackPanel>
+                    <TextBlock Text="Lịch sử hóa đơn"
+                           FontSize="20"
+                           FontWeight="SemiBold" />
+
+                    <!-- Hàng 1: Ngày, mã HĐ, mã NV, mã bàn, mã ca -->
+                    <WrapPanel Margin="0,12,0,0">
+                        <DatePicker SelectedDate="{Binding FromDate, Mode=TwoWay}" />
+                        <DatePicker Margin="8,0,0,0" SelectedDate="{Binding ToDate, Mode=TwoWay}" />
+                        <TextBox Width="100"
+                             Style="{StaticResource HintTextBoxStyle}"
+                             Tag="Nhập mã hóa đơn"
+                             Margin="10,0,0,0"
+                             Padding="10,6"
+                             Text="{Binding MaHoaDon, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Width="90"
+                             Margin="8,0,0,0"
+                             Padding="10,6"
+                             Style="{StaticResource HintTextBoxStyle}"
+                             Tag="Mã nhân viên"
+                             Text="{Binding MaNhanVien, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Width="80"
+                             Margin="8,0,0,0"
+                             Padding="10,6"
+                             Style="{StaticResource HintTextBoxStyle}"
+                             Tag="Mã bàn"
+                             Text="{Binding MaBan, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Width="80"
+                             Margin="8,0,0,0"
+                             Padding="10,6"
+                             Style="{StaticResource HintTextBoxStyle}"
+                             Tag="Mã ca làm việc"
+                             Text="{Binding MaCaLamViec, UpdateSourceTrigger=PropertyChanged}" />
+                    </WrapPanel>
+
+                    <!-- Hàng 2: Tên KH, SĐT, HTTT, Trạng thái -->
+                    <WrapPanel Margin="0,8,0,0">
+                        <TextBox Width="130"
+                             Padding="10,6"
+                             Style="{StaticResource HintTextBoxStyle}"
+                             Tag="Tên khách hàng"
+                             Text="{Binding TenKhachHang, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Width="120"
+                             Margin="8,0,0,0"
+                             Padding="10,6"
+                             Style="{StaticResource HintTextBoxStyle}"
+                             Tag="Số điện thoại KH"
+                             Text="{Binding SoDienThoai, UpdateSourceTrigger=PropertyChanged}" />
+                        <ComboBox Width="130"
+                              Margin="8,0,0,0"
+                              ItemsSource="{Binding DanhSachHinhThucThanhToan}"
+                              SelectedItem="{Binding HinhThucThanhToanFilter, Mode=TwoWay}" />
+                        <ComboBox Width="130"
+                              Margin="8,0,0,0"
+                              ItemsSource="{Binding DanhSachTrangThaiThanhToan}"
+                              SelectedItem="{Binding TrangThaiThanhToanFilter, Mode=TwoWay}" />
+                        <ComboBox Width="130"
+                              Margin="8,0,0,0"
+                              ItemsSource="{Binding DanhSachTrangThaiPhaChe}"
+                              SelectedItem="{Binding TrangThaiPhaCheFilter, Mode=TwoWay}" />
+                    </WrapPanel>
+
+                    <!-- Nút bấm -->
+                    <WrapPanel Margin="0,8,0,0">
+                        <Button Width="100"
+                            Content="Tìm kiếm"
+                            Command="{Binding TimKiemCommand}" />
+                        <Button Width="120"
+                            Margin="8,0,0,0"
+                            Content="Xem chi tiết"
+                            Command="{Binding XemChiTietCommand}" />
+                        <Button Width="120"
+                            Margin="8,0,0,0"
+                            Content="In hóa đơn"
+                            Command="{Binding InHoaDonCommand}" />
+                        <Button Width="90"
+                            Margin="8,0,0,0"
+                            Content="Làm mới"
+                            Command="{Binding LamMoiCommand}"
+                            Background="{DynamicResource SecondaryBrush}"
+                            BorderBrush="{DynamicResource SecondaryBrush}"
+                            Foreground="{DynamicResource SecondaryTextBrush}" />
+                    </WrapPanel>
+
+                    <!-- Hủy hóa đơn -->
+                    <WrapPanel Margin="0,8,0,0">
+                        <TextBlock VerticalAlignment="Center"
+                               Text="Lý do hủy:"
+                               FontWeight="SemiBold" />
+                        <TextBox Width="260"
+                             Margin="8,0,0,0"
+                             Padding="10,6"
+                             Text="{Binding LyDoHuy, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Width="120"
+                            Margin="8,0,0,0"
+                            Content="Hủy hóa đơn"
+                            Command="{Binding HuyHoaDonCommand}"
+                            Background="{DynamicResource DangerBrush}"
+                            BorderBrush="{DynamicResource DangerBrush}"
+                            Foreground="White" />
+                    </WrapPanel>
+
+                    <TextBlock Margin="0,10,0,0"
+                           Foreground="{DynamicResource DangerBrush}"
+                           TextWrapping="Wrap"
+                           Text="{Binding ErrorMessage}" />
+                    <TextBlock Margin="0,6,0,0"
+                           Foreground="{DynamicResource SuccessBrush}"
+                           TextWrapping="Wrap"
+                           Text="{Binding SuccessMessage}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Danh sách hóa đơn -->
+            <Border Grid.Row="2"
+                Background="{DynamicResource CardBackgroundBrush}"
+                CornerRadius="10"
+                Padding="12">
+                <DataGrid ItemsSource="{Binding DanhSachHoaDon}"
+                      SelectedItem="{Binding SelectedHoaDon, Mode=TwoWay}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserAddRows="False"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Mã HĐ" Binding="{Binding HoaDonBanId}" Width="75" />
+                        <DataGridTextColumn Header="Ngày bán" Binding="{Binding NgayBan, StringFormat=dd/MM/yyyy HH:mm}" Width="140" />
+                        <DataGridTextColumn Header="Nhân viên" Binding="{Binding TenNhanVien}" Width="120" />
+                        <DataGridTextColumn Header="Bàn" Binding="{Binding TenBan}" Width="90" />
+                        <DataGridTextColumn Header="Khu vực" Binding="{Binding TenKhuVuc}" Width="90" />
+                        <DataGridTextColumn Header="Khách hàng" Binding="{Binding TenKhachHang}" Width="110" />
+                        <DataGridTextColumn Header="SĐT" Binding="{Binding SoDienThoai}" Width="100" />
+                        <DataGridTextColumn Header="Thành toán" Binding="{Binding ThanhToan, StringFormat=N0}" Width="110" />
+                        <DataGridTextColumn Header="HTTT" Binding="{Binding HinhThucThanhToan}" Width="100" />
+                        <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThaiThanhToan}" Width="100" />
+                        <DataGridTextColumn Header="Pha chế" Binding="{Binding TrangThaiPhaCheHienThi}" Width="110" />
+                        <DataGridTextColumn Header="Hình thức" Binding="{Binding HinhThucPhucVuHienThi}" Width="100" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- Chi tiết hóa đơn -->
+            <Border Grid.Row="4"
+                Background="{DynamicResource CardBackgroundBrush}"
+                CornerRadius="10"
+                Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="8" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Chi tiết hóa đơn"
+                           FontSize="16"
+                           FontWeight="SemiBold" />
+
+                    <DataGrid Grid.Row="2"
+                          ItemsSource="{Binding ChiTietHoaDon}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"    
+                          >
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Mã món" Binding="{Binding MonId}" Width="80" />
+                            <DataGridTextColumn Header="Tên món" Binding="{Binding TenMon}" Width="*" />
+                            <DataGridTextColumn Header="Size" Binding="{Binding KichCo}" Width="70" />
+                            <DataGridTextColumn Header="Ghi chú món" Binding="{Binding GhiChuMon}" Width="120" />
+                            <DataGridTextColumn Header="Số lượng" Binding="{Binding SoLuong}" Width="90" />
+                            <DataGridTextColumn Header="Đơn giá bán" Binding="{Binding DonGiaBan, StringFormat=N0}" Width="110" />
+                            <DataGridTextColumn Header="Thành tiền" Binding="{Binding ThanhTien, StringFormat=N0}" Width="120" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>
+

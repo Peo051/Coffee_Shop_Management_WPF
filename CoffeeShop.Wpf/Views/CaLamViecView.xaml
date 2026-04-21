@@ -1,0 +1,209 @@
+<UserControl x:Class="CoffeeShop.Wpf.Views.CaLamViecView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="700"
+             d:DesignWidth="900">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,16">
+
+            <!-- ===== KHU VỰC MỞ CA ===== -->
+            <Border Background="{DynamicResource CardBackgroundBrush}"
+                    CornerRadius="10"
+                    Padding="16"
+                    Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock FontSize="15" FontWeight="Bold" Text="📂 Mở ca làm việc" />
+
+                    <WrapPanel Margin="0,10,0,0">
+                        <TextBlock VerticalAlignment="Center" Text="Tiền đầu ca:" />
+                        <TextBox Width="150"
+                                 Margin="8,0,0,0"
+                                 Padding="10,6"
+                                 Text="{Binding TienDauCaText, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock VerticalAlignment="Center" Margin="16,0,0,0" Text="Ghi chú ca:" />
+                        <TextBox Width="250"
+                                 Margin="8,0,0,0"
+                                 Padding="10,6"
+                                 Text="{Binding GhiChu, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <Button Width="100"
+                                Margin="10,0,0,0"
+                                Content="Mở ca"
+                                Command="{Binding MoCaCommand}" />
+                    </WrapPanel>
+
+                    <!-- Thông tin ca đang mở -->
+                    <Border Margin="0,12,0,0"
+                            Padding="12,8"
+                            Background="{DynamicResource SurfaceBrush}"
+                            CornerRadius="6">
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold"
+                                       Text="{Binding CaDangMo.CaLamViecId, StringFormat=Ca đang mở: #{0}, FallbackValue='Chưa có ca đang mở'}" />
+                            <TextBlock Margin="0,3,0,0"
+                                       Text="{Binding CaDangMo.ThoiGianMoCa, StringFormat=Thời gian mở: {0:dd/MM/yyyy HH:mm}}" />
+                            <TextBlock Margin="0,2,0,0"
+                                       Text="{Binding CaDangMo.TienDauCa, StringFormat=Tiền đầu ca: {0:N0} đ}" />
+                            <TextBlock Margin="0,2,0,0"
+                                       Text="{Binding CaDangMo.TongDoanhThu, StringFormat=Doanh thu hiện tại: {0:N0} đ}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== KHU VỰC TỔNG KẾT CA ===== -->
+            <Border Background="{DynamicResource CardBackgroundBrush}"
+                    CornerRadius="10"
+                    Padding="16"
+                    Margin="0,0,0,12">
+                <StackPanel>
+                    <WrapPanel>
+                        <TextBlock FontSize="15" FontWeight="Bold" VerticalAlignment="Center"
+                                   Text="📊 Tổng kết ca" />
+                        <Button Width="140"
+                                Margin="12,0,0,0"
+                                Content="Tải tổng kết ca"
+                                Command="{Binding TaiTongKetCaCommand}" />
+                    </WrapPanel>
+
+                    <!-- Bảng tổng kết -->
+                    <Border Margin="0,10,0,0"
+                            Padding="12,8"
+                            Background="{DynamicResource SurfaceBrush}"
+                            CornerRadius="6">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Cột trái -->
+                            <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                <TextBlock FontWeight="SemiBold" Text="Hóa đơn" Margin="0,0,0,4" />
+                                <TextBlock Text="{Binding TongKetCa.SoHoaDon, StringFormat=Đã thanh toán: {0}, FallbackValue='---'}" />
+                                <TextBlock Text="{Binding TongKetCa.SoHoaDonHuy, StringFormat=Đã hủy: {0}, FallbackValue='---'}" />
+
+                                <TextBlock FontWeight="SemiBold" Text="Doanh thu" Margin="0,10,0,4" />
+                                <TextBlock Text="{Binding TongKetCa.TongDoanhThu, StringFormat=Tổng: {0:N0} đ, FallbackValue='---'}" />
+                            </StackPanel>
+
+                            <!-- Cột phải -->
+                            <StackPanel Grid.Column="1">
+                                <TextBlock FontWeight="SemiBold" Text="Theo hình thức thanh toán" Margin="0,0,0,4" />
+                                <TextBlock Text="{Binding TongKetCa.TienMatHeThong, StringFormat=💵 Tiền mặt: {0:N0} đ, FallbackValue='---'}" />
+                                <TextBlock Text="{Binding TongKetCa.ChuyenKhoanHeThong, StringFormat=🏦 Chuyển khoản: {0:N0} đ, FallbackValue='---'}" />
+                                <TextBlock Text="{Binding TongKetCa.TheHeThong, StringFormat=💳 Thẻ: {0:N0} đ, FallbackValue='---'}" />
+                                <TextBlock Text="{Binding TongKetCa.ViDienTuHeThong, StringFormat=📱 Ví điện tử: {0:N0} đ, FallbackValue='---'}" />
+
+                                <TextBlock FontWeight="SemiBold" Text="Đối soát tiền mặt" Margin="0,10,0,4" />
+                                <TextBlock Text="{Binding TongKetCa.TienDauCa, StringFormat=Tiền đầu ca: {0:N0} đ, FallbackValue='---'}" />
+                                <TextBlock FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryBrush}"
+                                           Text="{Binding TongKetCa.TienMatDuKienCuoiCa, StringFormat=Tiền mặt dự kiến cuối ca: {0:N0} đ, FallbackValue='---'}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== KHU VỰC ĐÓNG CA ===== -->
+            <Border Background="{DynamicResource CardBackgroundBrush}"
+                    CornerRadius="10"
+                    Padding="16"
+                    Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock FontSize="15" FontWeight="Bold" Text="🔒 Đóng ca" />
+
+                    <WrapPanel Margin="0,10,0,0">
+                        <TextBlock VerticalAlignment="Center" Text="Tiền mặt thực đếm:" />
+                        <TextBox Width="150"
+                                 Margin="8,0,0,0"
+                                 Padding="10,6"
+                                 Text="{Binding TienMatThucDemText, UpdateSourceTrigger=PropertyChanged}" />
+                    </WrapPanel>
+
+                    <WrapPanel Margin="0,8,0,0">
+                        <TextBlock VerticalAlignment="Center" Text="Ghi chú đối soát:" />
+                        <TextBox Width="350"
+                                 Margin="8,0,0,0"
+                                 Padding="10,6"
+                                 Text="{Binding GhiChuDoiSoat, UpdateSourceTrigger=PropertyChanged}" />
+                    </WrapPanel>
+
+                    <TextBlock Margin="0,6,0,0"
+                               FontSize="11"
+                               FontStyle="Italic"
+                               Foreground="{DynamicResource MutedTextBrush}"
+                               Text="⚠ Nếu tiền mặt thực đếm lệch với hệ thống, bắt buộc nhập ghi chú đối soát." />
+
+                    <Button Width="130"
+                            Margin="0,10,0,0"
+                            HorizontalAlignment="Left"
+                            Content="Đóng ca"
+                            Command="{Binding DongCaCommand}"
+                            Background="{DynamicResource SecondaryBrush}"
+                            BorderBrush="{DynamicResource SecondaryBrush}"
+                            Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    <!-- Thông báo lỗi / thành công -->
+                    <TextBlock Margin="0,10,0,0"
+                               Foreground="{DynamicResource DangerBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding ErrorMessage}" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{DynamicResource SuccessBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding SuccessMessage}" />
+                </StackPanel>
+            </Border>
+
+            <!-- ===== LỊCH SỬ CA ===== -->
+            <Border Background="{DynamicResource CardBackgroundBrush}"
+                    CornerRadius="10"
+                    Padding="16">
+                <StackPanel>
+                    <WrapPanel>
+                        <TextBlock FontSize="15" FontWeight="Bold" VerticalAlignment="Center"
+                                   Text="📋 Lịch sử ca làm việc" />
+                    </WrapPanel>
+
+                    <WrapPanel Margin="0,10,0,10">
+                        <DatePicker SelectedDate="{Binding FromDate, Mode=TwoWay}" />
+                        <DatePicker Margin="8,0,0,0" SelectedDate="{Binding ToDate, Mode=TwoWay}" />
+                        <Button Width="130"
+                                Margin="10,0,0,0"
+                                Content="Tải lịch sử ca"
+                                Command="{Binding TaiLichSuCaCommand}" />
+                    </WrapPanel>
+
+                    <DataGrid ItemsSource="{Binding LichSuCa}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              MaxHeight="300"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Mã ca" Binding="{Binding CaLamViecId}" Width="70" />
+                            <DataGridTextColumn Header="Nhân viên" Binding="{Binding TenNhanVien}" Width="130" />
+                            <DataGridTextColumn Header="Mở ca" Binding="{Binding ThoiGianMoCa, StringFormat=dd/MM HH:mm}" Width="100" />
+                            <DataGridTextColumn Header="Đóng ca" Binding="{Binding ThoiGianDongCa, StringFormat=dd/MM HH:mm}" Width="100" />
+                            <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThaiCaHienThi}" Width="85" />
+                            <DataGridTextColumn Header="Số HĐ" Binding="{Binding SoHoaDon}" Width="60" />
+                            <DataGridTextColumn Header="Doanh thu" Binding="{Binding TongDoanhThu, StringFormat=N0}" Width="100" />
+                            <DataGridTextColumn Header="Tiền đầu ca" Binding="{Binding TienDauCa, StringFormat=N0}" Width="95" />
+                            <DataGridTextColumn Header="Thực đếm" Binding="{Binding TienMatThucDem, StringFormat=N0}" Width="90" />
+                            <DataGridTextColumn Header="Chênh lệch" Binding="{Binding ChenhLechTienMat, StringFormat=N0}" Width="90" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,87 @@
+# =========================
+# CoffeeShop.Wpf - .gitignore
+# .NET / WPF / Visual Studio
+# =========================
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+out/
+artifacts/
+publish/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# Rider / ReSharper
+.idea/
+_ReSharper*/
+*.DotSettings.user
+*.sln.iml
+
+# Logs / temp
+*.log
+*.tmp
+*.temp
+*.cache
+*.pidb
+*.svclog
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+
+# NuGet
+*.nupkg
+packages/
+!packages/build/
+.nuget/
+
+# Generated files
+Generated\\ Files/
+*.g.cs
+*.g.i.cs
+*_wpftmp.csproj
+
+# Publish profiles / local secrets
+*.publishsettings
+*.pubxml.user
+appsettings.Development.json
+.env
+.env.*
+
+# Database / local data files
+*.mdf
+*.ldf
+*.ndf
+*.bak
+*.dacpac
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archives / deliverables
+*.zip
+*.rar
+
+# Office temp files
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
+# Keep source and required project assets
+!.gitignore
+
+.agents

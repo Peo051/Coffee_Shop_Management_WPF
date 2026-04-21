@@ -1,0 +1,105 @@
+<UserControl x:Class="CoffeeShop.Wpf.Views.PhaCheView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="700"
+             d:DesignWidth="1100">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0">
+            <TextBlock Style="{StaticResource CardTitleText}" Text="☕ Quầy pha chế" />
+            <TextBlock Margin="0,4,0,0"
+                       Style="{StaticResource CaptionText}"
+                       Text="Theo dõi đơn đã thanh toán và cập nhật trạng thái pha chế." />
+        </StackPanel>
+
+        <!-- Nút hành động -->
+        <WrapPanel Grid.Row="1" Margin="0,10,0,0" Orientation="Horizontal">
+            <Button Content="🔄 Làm mới"
+                    Margin="0,0,8,0"
+                    Style="{StaticResource ButtonSecondary}"
+                    Command="{Binding LamMoiCommand}" />
+            <Button Content="🔥 Bắt đầu pha chế"
+                    Margin="0,0,8,0"
+                    Style="{StaticResource ButtonPrimary}"
+                    Command="{Binding BatDauPhaCheCommand}" />
+            <Button Content="✅ Hoàn thành"
+                    Margin="0,0,8,0"
+                    Style="{StaticResource ButtonPrimary}"
+                    Command="{Binding HoanThanhCommand}" />
+            <Button Content="🤝 Đã giao khách"
+                    Style="{StaticResource ButtonPrimary}"
+                    Command="{Binding GiaoKhachCommand}" />
+        </WrapPanel>
+
+        <!-- DataGrid -->
+        <Border Grid.Row="2"
+                Margin="0,10,0,0"
+                Style="{StaticResource CardPanel}">
+            <DataGrid ItemsSource="{Binding DonPhaChe}"
+                      SelectedItem="{Binding SelectedDon, Mode=TwoWay}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      SelectionMode="Single"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Auto">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Số gọi món"
+                                        Binding="{Binding SoGoiMonHienThi}"
+                                        Width="80" />
+                    <DataGridTextColumn Header="Mã HĐ"
+                                        Binding="{Binding MaHoaDonHienThi}"
+                                        Width="85" />
+                    <DataGridTextColumn Header="Thời gian order"
+                                        Binding="{Binding NgayBan, StringFormat={}{0:HH:mm dd/MM}}"
+                                        Width="120" />
+                    <DataGridTextColumn Header="Khách hàng"
+                                        Binding="{Binding TenKhachHang}"
+                                        Width="120" />
+                    <DataGridTextColumn Header="Bàn/Vị trí"
+                                        Binding="{Binding ViTriHienThi}"
+                                        Width="120" />
+                    <DataGridTextColumn Header="Danh sách món"
+                                        Binding="{Binding DanhSachMonTomTat}"
+                                        Width="*" />
+                    <DataGridTextColumn Header="Tổng tiền"
+                                        Binding="{Binding ThanhToan, StringFormat={}{0:N0} đ}"
+                                        Width="100" />
+                    <DataGridTextColumn Header="Trạng thái pha chế"
+                                        Binding="{Binding TrangThaiPhaCheHienThi}"
+                                        Width="130" />
+                    <DataGridTextColumn Header="Bắt đầu pha"
+                                        Binding="{Binding ThoiGianBatDauPhaChe, StringFormat={}{0:HH:mm:ss}}"
+                                        Width="90" />
+                    <DataGridTextColumn Header="Hoàn thành"
+                                        Binding="{Binding ThoiGianHoanThanhPhaChe, StringFormat={}{0:HH:mm:ss}}"
+                                        Width="90" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Thông báo -->
+        <StackPanel Grid.Row="3" Margin="0,8,0,0">
+            <TextBlock Foreground="{DynamicResource DangerBrush}"
+                       TextWrapping="Wrap"
+                       Text="{Binding ErrorMessage}" />
+            <TextBlock Foreground="{DynamicResource SuccessBrush}"
+                       TextWrapping="Wrap"
+                       Text="{Binding SuccessMessage}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

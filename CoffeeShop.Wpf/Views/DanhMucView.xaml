@@ -1,0 +1,103 @@
+﻿<UserControl x:Class="CoffeeShop.Wpf.Views.DanhMucView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="760"
+             d:DesignWidth="1180">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="380" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="1.2*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource CardPanel}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardTitleText}" Text="Thông tin danh mục" />
+
+                        <TextBlock Margin="0,10,0,0" Style="{StaticResource FieldLabelText}" Text="Tên danh mục" />
+                        <TextBox Text="{Binding TenDanhMuc, UpdateSourceTrigger=PropertyChanged}" MaxLength="150" />
+
+                        <TextBlock Margin="0,8,0,0" Style="{StaticResource FieldLabelText}" Text="Mô tả" />
+                        <TextBox Height="88"
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             Text="{Binding MoTa, UpdateSourceTrigger=PropertyChanged}"
+                             MaxLength="500" />
+
+                        <WrapPanel Margin="0,12,0,0">
+                            <Button Content="Tạo mới"
+                                Width="120"
+                                Style="{StaticResource ButtonPrimary}"
+                                Command="{Binding TaoMoiCommand}" />
+                            <Button Content="Làm mới"
+                                Width="100"
+                                Margin="8,0,0,0"
+                                Style="{StaticResource ButtonSecondary}"
+                                Command="{Binding LamMoiCommand}" />
+                        </WrapPanel>
+
+                        <TextBlock Margin="0,8,0,0"
+                               Foreground="{DynamicResource DangerBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding ErrorMessage}" />
+                        <TextBlock Margin="0,4,0,0"
+                               Foreground="{DynamicResource SuccessBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding SuccessMessage}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource CardPanel}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardTitleText}" Text="Tìm kiếm nhanh" />
+                        <TextBlock Margin="0,10,0,0" Style="{StaticResource FieldLabelText}" Text="Từ khóa" />
+                        <TextBox Text="{Binding TuKhoaTimKiem, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Margin="0,10,0,0"
+                            Content="Tìm kiếm"
+                            Style="{StaticResource ButtonPrimary}"
+                            Command="{Binding TimKiemCommand}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="4" Style="{StaticResource CardPanel}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="8" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Style="{StaticResource CardTitleText}" Text="Danh sách danh mục" />
+
+                    <DataGrid Grid.Row="2" ItemsSource="{Binding DanhMucs}"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          >
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Mã" Binding="{Binding DanhMucId}" Width="80" />
+                            <DataGridTextColumn Header="Tên danh mục" Binding="{Binding TenDanhMuc}" Width="2*" />
+                            <DataGridTextColumn Header="Mô tả" Binding="{Binding MoTa}" Width="3*" />
+                            <DataGridTextColumn Header="Ngày tạo" Binding="{Binding CreatedAt, StringFormat=dd/MM/yyyy}" Width="130" />
+                            <DataGridCheckBoxColumn Header="Kích hoạt" Binding="{Binding IsActive}" Width="95" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

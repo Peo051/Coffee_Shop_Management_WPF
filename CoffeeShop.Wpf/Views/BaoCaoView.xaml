@@ -1,0 +1,101 @@
+﻿<UserControl x:Class="CoffeeShop.Wpf.Views.BaoCaoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="clr-namespace:CoffeeShop.Wpf.Views"
+             mc:Ignorable="d"
+             d:DesignHeight="880"
+             d:DesignWidth="1220">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Style="{StaticResource CardPanel}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="Báo cáo" />
+                <TextBlock Margin="0,6,0,0"
+                           Style="{StaticResource PageSubtitleText}"
+                           Text="Xem báo cáo đơn giản hoặc nâng cao với bộ lọc ngày rõ ràng, dễ trình bày khi demo." />
+
+                <WrapPanel Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource FieldLabelText}" Text="Từ ngày" />
+                        <DatePicker Width="170" SelectedDate="{Binding FromDate, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel Margin="10,0,0,0">
+                        <TextBlock Style="{StaticResource FieldLabelText}" Text="Đến ngày" />
+                        <DatePicker Width="170" SelectedDate="{Binding ToDate, Mode=TwoWay}" />
+                    </StackPanel>
+                    <Button Margin="14,19,0,0"
+                            Width="130"
+                            Content="Tải báo cáo"
+                            Style="{StaticResource ButtonPrimary}"
+                            Command="{Binding TaiBaoCaoCommand}" />
+                    <Button Margin="8,19,0,0"
+                            Width="100"
+                            Content="Làm mới"
+                            Style="{StaticResource ButtonSecondary}"
+                            Command="{Binding LamMoiCommand}" />
+                </WrapPanel>
+
+                <TextBlock Margin="0,10,0,0"
+                           Foreground="{DynamicResource DangerBrush}"
+                           TextWrapping="Wrap"
+                           Text="{Binding ErrorMessage}" />
+                <TextBlock Margin="0,4,0,0"
+                           Foreground="{DynamicResource SuccessBrush}"
+                           TextWrapping="Wrap"
+                           Text="{Binding SuccessMessage}" />
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource CardPanelMuted}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource CaptionText}" Text="Tổng số hóa đơn" />
+                    <TextBlock Margin="0,6,0,0"
+                               FontSize="24"
+                               FontWeight="SemiBold"
+                               Text="{Binding TongSoHoaDon}" />
+                    <TextBlock Margin="0,8,0,0"
+                               Text="{Binding TongDoanhThuThuan, StringFormat=Tổng doanh thu thuần: {0:N0} đ}" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource CardPanelMuted}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource CaptionText}" Text="Sản lượng và doanh thu sản phẩm" />
+                    <TextBlock Margin="0,6,0,0"
+                               Text="{Binding TongSoLuongBan, StringFormat=Tổng số lượng bán: {0:N0}}" />
+                    <TextBlock Margin="0,8,0,0"
+                               Text="{Binding TongDoanhThuSanPham, StringFormat=Tổng doanh thu gộp sản phẩm: {0:N0} đ}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="6" Style="{StaticResource CardPanel}">
+            <TabControl>
+                <TabItem Header="Báo cáo đơn giản">
+                    <views:ReportDonGianView />
+                </TabItem>
+                <TabItem Header="Báo cáo nâng cao">
+                    <views:ReportNangCaoView />
+                </TabItem>
+            </TabControl>
+        </Border>
+    </Grid>
+</UserControl>
