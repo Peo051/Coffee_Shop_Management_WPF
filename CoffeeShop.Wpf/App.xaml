@@ -11,6 +11,8 @@
             
             <!-- Converters -->
             <converters:IntToBoolConverter x:Key="IntToBoolConverter" />
+            <converters:NullToBooleanConverter x:Key="NullToBooleanConverter" />
+            <converters:StringNullOrEmptyToBooleanConverter x:Key="StringNullOrEmptyToBooleanConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -27,7 +27,9 @@ public sealed class HoaDonBanViewModel : BaseViewModel
     private readonly RelayCommand<ChiTietHoaDonBanHienThi> _tangSoLuongCommand;
     private readonly RelayCommand<ChiTietHoaDonBanHienThi> _giamSoLuongCommand;
     private readonly RelayCommand<ChiTietHoaDonBanHienThi> _xoaMonCommand;
-    private readonly RelayCommand<Mon> _themMonNhanhCommand;
+    private readonly RelayCommand<MonHienThiViewModel> _themMonNhanhCommand;
+    private readonly RelayCommand<KhachHang> _chonKhachHangCommand;
+    private readonly RelayCommand _xoaKhachHangCommand;
 
     private string _tuKhoaTimMon = string.Empty;
     private string _selectedDanhMuc = "Tất cả";
@@ -63,6 +65,9 @@ public sealed class HoaDonBanViewModel : BaseViewModel
 
     // === Hình thức phục vụ ===
     private string _hinhThucPhucVu = HinhThucPhucVuConst.UongTaiQuan;
+    
+    // === Tìm kiếm ===
+    private string _timKiemKhachHangText = string.Empty;
 
     private string _errorMessage = string.Empty;
     private string _successMessage = string.Empty;
@@ -84,7 +89,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         _sessionService = sessionService;
 
         Mons = new ObservableCollection<Mon>();
-        MonsHienThi = new ObservableCollection<Mon>();
+        MonsHienThi = new ObservableCollection<MonHienThiViewModel>();
         DanhMucMons = new ObservableCollection<string>();
         KhachHangs = new ObservableCollection<KhachHang>();
         KhuyenMais = new ObservableCollection<KhuyenMai>();
@@ -97,18 +102,22 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         _tangSoLuongCommand = new RelayCommand<ChiTietHoaDonBanHienThi>(ExecuteTangSoLuong);
         _giamSoLuongCommand = new RelayCommand<ChiTietHoaDonBanHienThi>(ExecuteGiamSoLuong);
         _xoaMonCommand = new RelayCommand<ChiTietHoaDonBanHienThi>(ExecuteXoaMon);
-        _themMonNhanhCommand = new RelayCommand<Mon>(ExecuteThemMonNhanh);
+        _themMonNhanhCommand = new RelayCommand<MonHienThiViewModel>(ExecuteThemMonNhanh);
+        _chonKhachHangCommand = new RelayCommand<KhachHang>(ExecuteChonKhachHang);
+        _xoaKhachHangCommand = new RelayCommand(ExecuteXoaKhachHang);
 
         InitializeQrPaymentCommands();
     }
 
     public ObservableCollection<Mon> Mons { get; }
 
-    public ObservableCollection<Mon> MonsHienThi { get; }
+    public ObservableCollection<MonHienThiViewModel> MonsHienThi { get; }
 
     public ObservableCollection<string> DanhMucMons { get; }
 
     public ObservableCollection<KhachHang> KhachHangs { get; }
+    
+    public ObservableCollection<KhachHang> KhachHangsFiltered { get; } = new();
 
     public ObservableCollection<KhuyenMai> KhuyenMais { get; }
 
@@ -159,6 +168,18 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             if (SetProperty(ref _tuKhoaTimMon, value))
             {
                 ApplyMonFilter();
+            }
+        }
+    }
+
+    public string TimKiemKhachHangText
+    {
+        get => _timKiemKhachHangText;
+        set
+        {
+            if (SetProperty(ref _timKiemKhachHangText, value))
+            {
+                ApplyKhachHangFilter();
             }
         }
     }
@@ -402,9 +423,19 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         get => _kichCoDuocChon;
         set
         {
-            if (SetProperty(ref _kichCoDuocChon, value) && SelectedMon is not null)
+            if (SetProperty(ref _kichCoDuocChon, value))
             {
-                DonGiaBan = (SelectedMon.DonGia + GetPhuThuKichCo(value)).ToString("0.##", CultureInfo.CurrentCulture);
+                // Cập nhật giá món đang chọn
+                if (SelectedMon is not null)
+                {
+                    DonGiaBan = (SelectedMon.DonGia + GetPhuThuKichCo(value)).ToString("0.##", CultureInfo.CurrentCulture);
+                }
+                
+                // Cập nhật giá tất cả món trong danh sách hiển thị
+                foreach (var monVM in MonsHienThi)
+                {
+                    monVM.UpdateKichCo(value);
+                }
             }
         }
     }
@@ -458,6 +489,10 @@ public sealed class HoaDonBanViewModel : BaseViewModel
     public ICommand XoaMonCommand => _xoaMonCommand;
 
     public ICommand ThemMonNhanhCommand => _themMonNhanhCommand;
+    
+    public ICommand ChonKhachHangCommand => _chonKhachHangCommand;
+    
+    public ICommand XoaKhachHangCommand => _xoaKhachHangCommand;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -896,9 +931,11 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         ErrorMessage = string.Empty;
     }
 
-    private void ExecuteThemMonNhanh(Mon? mon)
+    private void ExecuteThemMonNhanh(MonHienThiViewModel? monVM)
     {
-        if (mon is null || IsBusy) return;
+        if (monVM is null || IsBusy) return;
+        
+        var mon = monVM.Mon;
 
         ErrorMessage = string.Empty;
 
@@ -1000,6 +1037,52 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         {
             KhachHangs.Add(item);
         }
+        
+        ApplyKhachHangFilter();
+    }
+    
+    private void ApplyKhachHangFilter()
+    {
+        KhachHangsFiltered.Clear();
+        
+        var keyword = TimKiemKhachHangText?.Trim().ToLower() ?? string.Empty;
+        
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+            // Hiển thị tất cả
+            foreach (var kh in KhachHangs)
+            {
+                KhachHangsFiltered.Add(kh);
+            }
+        }
+        else
+        {
+            // Lọc theo SĐT hoặc tên
+            foreach (var kh in KhachHangs)
+            {
+                var sdt = kh.SoDienThoai?.ToLower() ?? string.Empty;
+                var ten = kh.HoTen?.ToLower() ?? string.Empty;
+                
+                if (sdt.Contains(keyword) || ten.Contains(keyword))
+                {
+                    KhachHangsFiltered.Add(kh);
+                }
+            }
+        }
+    }
+    
+    private void ExecuteChonKhachHang(KhachHang? khachHang)
+    {
+        if (khachHang is null) return;
+        
+        SelectedKhachHang = khachHang;
+        TimKiemKhachHangText = string.Empty; // Xóa text tìm kiếm sau khi chọn
+    }
+    
+    private void ExecuteXoaKhachHang()
+    {
+        SelectedKhachHang = null;
+        TimKiemKhachHangText = string.Empty;
     }
 
     private async Task LoadKhuyenMaiAsync(CancellationToken cancellationToken)
@@ -1249,7 +1332,9 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         MonsHienThi.Clear();
         foreach (var mon in result)
         {
-            MonsHienThi.Add(mon);
+            var monVM = new MonHienThiViewModel(mon);
+            monVM.UpdateKichCo(KichCoDuocChon);
+            MonsHienThi.Add(monVM);
         }
     }
 

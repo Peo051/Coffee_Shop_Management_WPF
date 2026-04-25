@@ -1,3 +1,4 @@
+using System.Configuration;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -14,9 +15,16 @@ public class PaymentApiClient
     private readonly HttpClient _httpClient;
     private readonly string _baseUrl;
 
-    public PaymentApiClient(string baseUrl = "https://localhost:5002")
+    // Constant fallback nếu không có config
+    private const string DefaultBaseUrl = "https://localhost:5002";
+
+    public PaymentApiClient(string? baseUrl = null)
     {
-        _baseUrl = baseUrl.TrimEnd('/');
+        // Ưu tiên: 1. Parameter truyền vào, 2. App.config, 3. Default constant
+        _baseUrl = (baseUrl 
+                    ?? ConfigurationManager.AppSettings["PaymentApiBaseUrl"] 
+                    ?? DefaultBaseUrl)
+                   .TrimEnd('/');
         
         // Configure HttpClient to accept self-signed certificates in development
         var handler = new HttpClientHandler
@@ -29,6 +37,11 @@ public class PaymentApiClient
             Timeout = TimeSpan.FromSeconds(30)
         };
     }
+
+    /// <summary>
+    /// Lấy BaseUrl hiện tại (để debug/logging)
+    /// </summary>
+    public string BaseUrl => _baseUrl;
 
     /// <summary>
     /// Tạo QR payment cho hóa đơn

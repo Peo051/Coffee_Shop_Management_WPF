@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+    <appSettings>
+        <!-- Payment API Base URL - Thay đổi URL này khi deploy hoặc dùng ngrok mới -->
+        <!-- 
+        Ví dụ:
+        - Development với ngrok: https://abc-xyz-123.ngrok-free.app
+        - Production: https://your-domain.com
+        - Local testing: https://localhost:5002
+        -->
+        <add key="PaymentApiBaseUrl" value="https://your-ngrok-url.ngrok-free.app" />
+    </appSettings>
+    
+    <connectionStrings>
+        <!-- Database connection string -->
+        <add name="CoffeeShopDb"
+            connectionString="Server=YOUR_SERVER;Database=CoffeeShopDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true" />
+    </connectionStrings>
+</configuration>

@@ -66,6 +66,9 @@ CoffeeShop.PaymentApi/appsettings.json
 CoffeeShop.PaymentApi/appsettings.Development.json
 CoffeeShop.PaymentApi/appsettings.Production.json
 
+# WPF App.config (contains API URLs and connection strings)
+CoffeeShop.Wpf/App.config
+
 # Database / local data files
 *.mdf
 *.ldf

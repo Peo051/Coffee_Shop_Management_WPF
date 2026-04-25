@@ -42,10 +42,6 @@
 
                 <!-- Size & Ghi chú (chọn trước khi thêm món) -->
                 <StackPanel Grid.Row="2" Margin="0,8,0,0">
-                    <TextBlock FontSize="11"
-                               FontStyle="Italic"
-                               Foreground="{DynamicResource MutedTextBrush}"
-                               Text="ℹ️ Chọn size và ghi chú trước khi bấm Thêm món." />
                     <Grid Margin="0,4,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -184,16 +180,126 @@
                     <TextBlock Style="{StaticResource FieldLabelText}" Text="Hình thức phục vụ" />
                     <ComboBox ItemsSource="{Binding DanhSachHinhThucPhucVu}"
                               SelectedItem="{Binding HinhThucPhucVuHienThi, Mode=TwoWay}" />
-                    <TextBlock FontSize="11"
-                               FontStyle="Italic"
-                               Margin="0,4,0,0"
-                               Foreground="{DynamicResource MutedTextBrush}"
-                               Text="☕ Khách ngồi tự do, không cần chọn bàn." />
 
                     <TextBlock Margin="0,8,0,0" Style="{StaticResource FieldLabelText}" Text="Khách hàng" />
-                    <ComboBox ItemsSource="{Binding KhachHangs}"
-                              SelectedItem="{Binding SelectedKhachHang, Mode=TwoWay}"
-                              DisplayMemberPath="HienThi" />
+                    
+                    <!-- Tìm kiếm khách hàng theo SĐT -->
+                    <TextBox Margin="0,4,0,4"
+                             Style="{StaticResource HintTextBoxStyle}"
+                             Tag="🔍 Tìm theo SĐT (VD: 0901234567)"
+                             Text="{Binding TimKiemKhachHangText, UpdateSourceTrigger=PropertyChanged}" />
+                    
+                    <!-- Hiển thị khách hàng đã chọn -->
+                    <Border Margin="0,4,0,0"
+                            Padding="10,8"
+                            Background="{DynamicResource CardBackgroundBrush}"
+                            BorderBrush="{DynamicResource PrimaryBrush}"
+                            BorderThickness="2"
+                            CornerRadius="8">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedKhachHang, Converter={StaticResource NullToBooleanConverter}}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="{Binding SelectedKhachHang.HoTen}"
+                                           FontWeight="SemiBold"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource PrimaryTextBrush}" />
+                                <TextBlock Text="{Binding SelectedKhachHang.SoDienThoai}"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Margin="0,2,0,0" />
+                                <TextBlock FontSize="11"
+                                           Foreground="{DynamicResource SuccessBrush}"
+                                           Margin="0,2,0,0">
+                                    <Run Text="💎 Điểm:" />
+                                    <Run Text="{Binding SelectedKhachHang.DiemTichLuy, Mode=OneWay}" FontWeight="SemiBold" />
+                                </TextBlock>
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Content="✕"
+                                    Width="30"
+                                    Height="30"
+                                    FontSize="16"
+                                    FontWeight="Bold"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding XoaKhachHangCommand}"
+                                    ToolTip="Xóa khách hàng"
+                                    Style="{StaticResource ButtonDanger}" />
+                        </Grid>
+                    </Border>
+                    
+                    <!-- Danh sách kết quả tìm kiếm -->
+                    <Border Margin="0,4,0,0"
+                            MaxHeight="200"
+                            Background="{DynamicResource CardBackgroundBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <!-- Hiển thị khi có text tìm kiếm và chưa chọn khách hàng -->
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding TimKiemKhachHangText, Converter={StaticResource StringNullOrEmptyToBooleanConverter}}" Value="False" />
+                                            <Condition Binding="{Binding SelectedKhachHang, Converter={StaticResource NullToBooleanConverter}}" Value="False" />
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding KhachHangsFiltered}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button HorizontalContentAlignment="Stretch"
+                                                Padding="10,8"
+                                                Command="{Binding DataContext.ChonKhachHangCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource ButtonBase}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="{Binding HoTen}"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="12"
+                                                               Foreground="{DynamicResource PrimaryTextBrush}" />
+                                                    <TextBlock Text="{Binding SoDienThoai}"
+                                                               FontSize="11"
+                                                               Foreground="{DynamicResource MutedTextBrush}"
+                                                               Margin="0,2,0,0" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource SuccessBrush}">
+                                                    <Run Text="💎" />
+                                                    <Run Text="{Binding DiemTichLuy, Mode=OneWay}" FontWeight="SemiBold" />
+                                                </TextBlock>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
 
                     <TextBlock Margin="0,8,0,0" Style="{StaticResource FieldLabelText}" Text="Khuyến mãi" />
                     <ComboBox ItemsSource="{Binding KhuyenMais}"
@@ -429,7 +535,6 @@
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
-                                <Run Text="ℹ️ Chọn khách hàng để dùng điểm tích lũy." />
                             </TextBlock>
 
                             <!-- Hiển thị khi đã chọn khách hàng -->
@@ -654,7 +759,6 @@
                                 </Style.Triggers>
                             </Style>
                         </TextBlock.Style>
-                        <Run Text="ℹ️ Với QR payment, hóa đơn chỉ được xác nhận thanh toán sau khi hệ thống nhận trạng thái PAID từ backend." />
                     </TextBlock>
 
                     <!-- ===== KHU VỰC QR PAYMENT ===== -->

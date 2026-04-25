@@ -79,12 +79,6 @@
                             Style="{StaticResource ButtonPrimary}" />
                 </WrapPanel>
 
-                <TextBlock Margin="0,6,0,0"
-                           FontSize="11"
-                           FontStyle="Italic"
-                           Foreground="{DynamicResource MutedTextBrush}"
-                           Text="ℹ️ Hóa đơn khách có thông tin thanh toán. Phiếu pha chế chỉ có món, size và ghi chú, không in giá tiền." />
-
                 <WrapPanel Margin="0,8,0,0">
                     <ComboBox Width="140"
                               SelectedValuePath="Tag"
