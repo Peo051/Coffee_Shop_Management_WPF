@@ -57,6 +57,7 @@ Generated\\ Files/
 *.publishsettings
 *.pubxml.user
 appsettings.Development.json
+appsettings.json
 .env
 .env.*
 
