@@ -261,3 +261,15 @@ PRINT N'- PaymentConfirmedAt: Thời điểm xác nhận thanh toán';
 PRINT N'- MaGiaoDich (cột cũ): Vẫn dùng để lưu reference cuối cùng từ ngân hàng';
 GO
 
+SELECT
+    HoaDonBanId,
+    TrangThaiThanhToan,
+    HinhThucThanhToan,
+    PaymentStatus,
+    PaymentProvider,
+    ProviderPaymentId,
+    ProviderOrderCode,
+    MaGiaoDich,
+    PaymentConfirmedAt
+FROM dbo.HoaDonBan
+WHERE HoaDonBanId = 28;
