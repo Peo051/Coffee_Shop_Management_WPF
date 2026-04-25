@@ -61,6 +61,11 @@ appsettings.json
 .env
 .env.*
 
+# Local appsettings / secrets
+CoffeeShop.PaymentApi/appsettings.json
+CoffeeShop.PaymentApi/appsettings.Development.json
+CoffeeShop.PaymentApi/appsettings.Production.json
+
 # Database / local data files
 *.mdf
 *.ldf
