@@ -1,4 +1,5 @@
 using System.Windows;
+using CoffeeShop.Wpf.Infrastructure;
 using CoffeeShop.Wpf.Repositories;
 using CoffeeShop.Wpf.Services;
 using CoffeeShop.Wpf.ViewModels;
@@ -10,6 +11,17 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        try
+        {
+            DbConnectionFactory.InitializeFromConfig();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Lỗi Cấu Hình Kết Nối", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown();
+            return;
+        }
 
         var navigationService = new NavigationService();
         var sessionService = new SessionService();
@@ -78,9 +90,10 @@ public partial class App : Application
         var hoaDonNhapService = new HoaDonNhapService(hoaDonNhapRepository, nhaCungCapService, monService, auditLogService);
         var hoaDonNhapViewModel = new HoaDonNhapViewModel(hoaDonNhapService, nhaCungCapService, monService, sessionService);
 
+        // Module Quản lý bàn đã bị gỡ - giữ lại BanRepository và BanService vì HoaDonBanService còn dùng
         var banRepository = new BanRepository();
         var banService = new BanService(banRepository, auditLogService, sessionService);
-        var quanLyBanViewModel = new QuanLyBanViewModel(banService);
+        // var quanLyBanViewModel = new QuanLyBanViewModel(banService); // Đã gỡ
 
         var caLamViecRepository = new CaLamViecRepository();
         var caLamViecService = new CaLamViecService(caLamViecRepository, auditLogService);
@@ -106,7 +119,6 @@ public partial class App : Application
         var hoaDonBanViewModel = new HoaDonBanViewModel(
             hoaDonBanService,
             monService,
-            banService,
             caLamViecService,
             khachHangService,
             khuyenMaiService,
@@ -145,7 +157,8 @@ public partial class App : Application
             canhBaoTonKhoViewModel,
             timKiemSanPhamViewModel,
             hoaDonNhapViewModel,
-            quanLyBanViewModel,
+            // Module Quản lý bàn đã bị gỡ
+            // quanLyBanViewModel,
             caLamViecViewModel,
             hoaDonBanViewModel,
             lichSuHoaDonViewModel,

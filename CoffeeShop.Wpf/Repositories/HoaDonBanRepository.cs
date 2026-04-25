@@ -26,6 +26,7 @@ public sealed class HoaDonBanRepository : IHoaDonBanRepository
     public async Task<int> CreateAsync(
         HoaDonBan hoaDonBan,
         IReadOnlyList<ChiTietHoaDonBan> chiTietHoaDonBans,
+        bool skipInventoryDeduction = false,
         CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(DbConnectionFactory.ConnectionString);
@@ -160,122 +161,143 @@ SELECT TonKho FROM dbo.Mon WHERE MonId = @MonId;";
 INSERT INTO dbo.ChiTietHoaDonBan (HoaDonBanId, MonId, DonGiaBan, SoLuong, KichCo, PhuThuKichCo, GhiChuMon)
 VALUES (@HoaDonBanId, @MonId, @DonGiaBan, @SoLuong, @KichCo, @PhuThuKichCo, @GhiChuMon);";
 
+            // ============================================================================
+            // QUY TRÌNH TRỪ TỒN KHO KÉP (TWO-TIER INVENTORY DEDUCTION)
+            // ============================================================================
+            // Hệ thống quản lý 2 loại tồn kho song song:
+            // 1. Mon.TonKho = Tồn THÀNH PHẨM (món có thể bán ngay, đơn vị: phần/ly)
+            // 2. NguyenLieu.TonKho = Tồn NGUYÊN LIỆU THÔ (cà phê, sữa..., đơn vị: kg/lít)
+            //
+            // Khi bán hàng, hệ thống trừ CẢ HAI:
+            // - Trừ Mon.TonKho: Kiểm soát khả năng phục vụ (service capacity)
+            // - Trừ NguyenLieu.TonKho: Theo dõi chi phí nguyên liệu thực tế (cost tracking)
+            //
+            // QUAN TRỌNG: Với QR Payment pending, bỏ qua trừ kho để tránh lệch dữ liệu
+            // nếu khách không thanh toán. Chỉ trừ kho khi webhook xác nhận PAID.
+            // ============================================================================
+
             foreach (var chiTiet in chiTietHoaDonBans)
             {
-                // === 1. Lấy công thức món ===
-                var congThucMons = await _congThucMonRepository.GetByMonAsync(
-                    connection,
-                    (SqlTransaction)transaction,
-                    chiTiet.MonId,
-                    activeOnly: true,
-                    cancellationToken);
-
-                // === 2. Kiểm tra tồn kho nguyên liệu trước khi trừ ===
-                var nguyenLieuThieuList = new List<string>();
-
-                foreach (var congThuc in congThucMons)
+                // === CHỈ KIỂM TRA VÀ TRỪ KHO NẾU KHÔNG PHẢI QR PENDING ===
+                if (!skipInventoryDeduction)
                 {
-                    var soLuongCanDung = congThuc.DinhLuong * chiTiet.SoLuong;
-                    var tonKhoHienTai = await _nguyenLieuRepository.GetTonKhoAsync(
+                    // === 1. Lấy công thức món (để biết cần nguyên liệu gì, bao nhiêu) ===
+                    var congThucMons = await _congThucMonRepository.GetByMonAsync(
                         connection,
                         (SqlTransaction)transaction,
-                        congThuc.NguyenLieuId,
+                        chiTiet.MonId,
+                        activeOnly: true,
                         cancellationToken);
 
-                    if (tonKhoHienTai < soLuongCanDung)
+                    // === 2. Kiểm tra tồn kho NGUYÊN LIỆU trước khi trừ ===
+                    var nguyenLieuThieuList = new List<string>();
+
+                    foreach (var congThuc in congThucMons)
                     {
-                        nguyenLieuThieuList.Add($"{congThuc.TenNguyenLieu} (cần {soLuongCanDung:N2} {congThuc.DonViTinh}, còn {tonKhoHienTai:N2} {congThuc.DonViTinh})");
-                    }
-                }
+                        var soLuongCanDung = congThuc.DinhLuong * chiTiet.SoLuong;
+                        var tonKhoHienTai = await _nguyenLieuRepository.GetTonKhoAsync(
+                            connection,
+                            (SqlTransaction)transaction,
+                            congThuc.NguyenLieuId,
+                            cancellationToken);
 
-                if (nguyenLieuThieuList.Count > 0)
-                {
-                    throw new InvalidOperationException($"Không đủ nguyên liệu cho món '{chiTiet.TenMon}':\n- {string.Join("\n- ", nguyenLieuThieuList)}");
-                }
-
-                // === 3. Lấy tồn kho món trước khi trừ ===
-                int tonTruoc;
-                await using (var getTonKhoCommand = new SqlCommand(getTonKhoSql, connection, (SqlTransaction)transaction))
-                {
-                    getTonKhoCommand.Parameters.AddWithValue("@MonId", chiTiet.MonId);
-                    var tonKhoObj = await getTonKhoCommand.ExecuteScalarAsync(cancellationToken);
-                    tonTruoc = tonKhoObj != null ? Convert.ToInt32(tonKhoObj) : 0;
-                }
-
-                // === 4. Trừ tồn kho món ===
-                await using var updateTonKhoCommand = new SqlCommand(updateTonKhoSql, connection, (SqlTransaction)transaction);
-                updateTonKhoCommand.Parameters.AddWithValue("@MonId", chiTiet.MonId);
-                updateTonKhoCommand.Parameters.AddWithValue("@SoLuongBan", chiTiet.SoLuong);
-
-                var affectedRows = await updateTonKhoCommand.ExecuteNonQueryAsync(cancellationToken);
-                if (affectedRows == 0)
-                {
-                    throw new InvalidOperationException($"Tồn kho không đủ cho sản phẩm mã {chiTiet.MonId}.");
-                }
-
-                // === 5. Tính tồn sau món ===
-                int tonSau = tonTruoc - chiTiet.SoLuong;
-
-                // === 6. Ghi lịch sử tồn kho món ===
-                await _lichSuTonKhoRepository.ThemLichSuAsync(
-                    connection,
-                    (SqlTransaction)transaction,
-                    monId: chiTiet.MonId,
-                    loaiPhatSinh: "BanHang",
-                    soLuongThayDoi: -chiTiet.SoLuong,
-                    tonTruoc: tonTruoc,
-                    tonSau: tonSau,
-                    hoaDonBanId: newHoaDonBanId,
-                    hoaDonNhapId: null,
-                    ghiChu: $"Bán hàng - Hóa đơn #{newHoaDonBanId}",
-                    nguoiDungId: hoaDonBan.CreatedByUserId,
-                    cancellationToken: cancellationToken);
-
-                // === 7. Trừ nguyên liệu theo công thức ===
-                foreach (var congThuc in congThucMons)
-                {
-                    var soLuongCanDung = congThuc.DinhLuong * chiTiet.SoLuong;
-
-                    // Lấy tồn trước nguyên liệu
-                    var tonTruocNguyenLieu = await _nguyenLieuRepository.GetTonKhoAsync(
-                        connection,
-                        (SqlTransaction)transaction,
-                        congThuc.NguyenLieuId,
-                        cancellationToken);
-
-                    // Trừ tồn kho nguyên liệu
-                    var rowsAffected = await _nguyenLieuRepository.TruTonKhoAsync(
-                        connection,
-                        (SqlTransaction)transaction,
-                        congThuc.NguyenLieuId,
-                        soLuongCanDung,
-                        cancellationToken);
-
-                    if (rowsAffected == 0)
-                    {
-                        throw new InvalidOperationException($"Không đủ nguyên liệu '{congThuc.TenNguyenLieu}' (cần {soLuongCanDung:N2} {congThuc.DonViTinh}).");
+                        if (tonKhoHienTai < soLuongCanDung)
+                        {
+                            nguyenLieuThieuList.Add($"{congThuc.TenNguyenLieu} (cần {soLuongCanDung:N2} {congThuc.DonViTinh}, còn {tonKhoHienTai:N2} {congThuc.DonViTinh})");
+                        }
                     }
 
-                    // Tính tồn sau nguyên liệu
-                    var tonSauNguyenLieu = tonTruocNguyenLieu - soLuongCanDung;
+                    if (nguyenLieuThieuList.Count > 0)
+                    {
+                        throw new InvalidOperationException($"Không đủ nguyên liệu cho món '{chiTiet.TenMon}':\n- {string.Join("\n- ", nguyenLieuThieuList)}");
+                    }
 
-                    // Ghi lịch sử nguyên liệu
-                    await _lichSuNguyenLieuRepository.ThemLichSuAsync(
+                    // === 3. Lấy tồn kho THÀNH PHẨM (Mon.TonKho) trước khi trừ ===
+                    int tonTruoc;
+                    await using (var getTonKhoCommand = new SqlCommand(getTonKhoSql, connection, (SqlTransaction)transaction))
+                    {
+                        getTonKhoCommand.Parameters.AddWithValue("@MonId", chiTiet.MonId);
+                        var tonKhoObj = await getTonKhoCommand.ExecuteScalarAsync(cancellationToken);
+                        tonTruoc = tonKhoObj != null ? Convert.ToInt32(tonKhoObj) : 0;
+                    }
+
+                    // === 4. Trừ tồn kho THÀNH PHẨM (Mon.TonKho) ===
+                    // Mục đích: Kiểm soát số lượng món có thể bán (service capacity)
+                    await using var updateTonKhoCommand = new SqlCommand(updateTonKhoSql, connection, (SqlTransaction)transaction);
+                    updateTonKhoCommand.Parameters.AddWithValue("@MonId", chiTiet.MonId);
+                    updateTonKhoCommand.Parameters.AddWithValue("@SoLuongBan", chiTiet.SoLuong);
+
+                    var affectedRows = await updateTonKhoCommand.ExecuteNonQueryAsync(cancellationToken);
+                    if (affectedRows == 0)
+                    {
+                        throw new InvalidOperationException($"Tồn kho thành phẩm không đủ cho món '{chiTiet.TenMon}' (mã {chiTiet.MonId}).");
+                    }
+
+                    // === 5. Tính tồn sau món ===
+                    int tonSau = tonTruoc - chiTiet.SoLuong;
+
+                    // === 6. Ghi lịch sử tồn kho THÀNH PHẨM ===
+                    await _lichSuTonKhoRepository.ThemLichSuAsync(
                         connection,
                         (SqlTransaction)transaction,
-                        nguyenLieuId: congThuc.NguyenLieuId,
-                        loaiPhatSinh: "XuatKho",
-                        soLuongThayDoi: -soLuongCanDung,
-                        tonTruoc: tonTruocNguyenLieu,
-                        tonSau: tonSauNguyenLieu,
+                        monId: chiTiet.MonId,
+                        loaiPhatSinh: "BanHang",
+                        soLuongThayDoi: -chiTiet.SoLuong,
+                        tonTruoc: tonTruoc,
+                        tonSau: tonSau,
                         hoaDonBanId: newHoaDonBanId,
                         hoaDonNhapId: null,
-                        ghiChu: $"Xuất kho cho món '{chiTiet.TenMon}' - HĐ #{newHoaDonBanId}",
+                        ghiChu: $"Bán hàng - Hóa đơn #{newHoaDonBanId}",
                         nguoiDungId: hoaDonBan.CreatedByUserId,
                         cancellationToken: cancellationToken);
+
+                    // === 7. Trừ tồn kho NGUYÊN LIỆU THÔ theo công thức ===
+                    // Mục đích: Theo dõi chi phí nguyên liệu thực tế (cost tracking)
+                    foreach (var congThuc in congThucMons)
+                    {
+                        var soLuongCanDung = congThuc.DinhLuong * chiTiet.SoLuong;
+
+                        // Lấy tồn trước NGUYÊN LIỆU
+                        var tonTruocNguyenLieu = await _nguyenLieuRepository.GetTonKhoAsync(
+                            connection,
+                            (SqlTransaction)transaction,
+                            congThuc.NguyenLieuId,
+                            cancellationToken);
+
+                        // Trừ tồn kho NGUYÊN LIỆU (NguyenLieu.TonKho)
+                        var rowsAffected = await _nguyenLieuRepository.TruTonKhoAsync(
+                            connection,
+                            (SqlTransaction)transaction,
+                            congThuc.NguyenLieuId,
+                            soLuongCanDung,
+                            cancellationToken);
+
+                        if (rowsAffected == 0)
+                        {
+                            throw new InvalidOperationException($"Không đủ nguyên liệu '{congThuc.TenNguyenLieu}' (cần {soLuongCanDung:N2} {congThuc.DonViTinh}).");
+                        }
+
+                        // Tính tồn sau NGUYÊN LIỆU
+                        var tonSauNguyenLieu = tonTruocNguyenLieu - soLuongCanDung;
+
+                        // Ghi lịch sử tồn kho NGUYÊN LIỆU
+                        await _lichSuNguyenLieuRepository.ThemLichSuAsync(
+                            connection,
+                            (SqlTransaction)transaction,
+                            nguyenLieuId: congThuc.NguyenLieuId,
+                            loaiPhatSinh: "XuatKho",
+                            soLuongThayDoi: -soLuongCanDung,
+                            tonTruoc: tonTruocNguyenLieu,
+                            tonSau: tonSauNguyenLieu,
+                            hoaDonBanId: newHoaDonBanId,
+                            hoaDonNhapId: null,
+                            ghiChu: $"Xuất kho cho món '{chiTiet.TenMon}' - HĐ #{newHoaDonBanId}",
+                            nguoiDungId: hoaDonBan.CreatedByUserId,
+                            cancellationToken: cancellationToken);
+                    }
                 }
 
-                // === 8. Insert chi tiết hóa đơn ===
+                // === 8. Insert chi tiết hóa đơn (luôn insert dù QR pending) ===
                 await using var insertChiTietCommand = new SqlCommand(insertChiTietSql, connection, (SqlTransaction)transaction);
                 insertChiTietCommand.Parameters.AddWithValue("@HoaDonBanId", newHoaDonBanId);
                 insertChiTietCommand.Parameters.AddWithValue("@MonId", chiTiet.MonId);
@@ -290,7 +312,8 @@ VALUES (@HoaDonBanId, @MonId, @DonGiaBan, @SoLuong, @KichCo, @PhuThuKichCo, @Ghi
             }
 
             // Cập nhật điểm tích lũy khách hàng: trừ điểm dùng, cộng điểm mới
-            if (hoaDonBan.KhachHangId.HasValue && (hoaDonBan.DiemSuDung > 0 || hoaDonBan.DiemCong > 0))
+            // CHỈ CẬP NHẬT ĐIỂM NẾU KHÔNG PHẢI QR PENDING
+            if (!skipInventoryDeduction && hoaDonBan.KhachHangId.HasValue && (hoaDonBan.DiemSuDung > 0 || hoaDonBan.DiemCong > 0))
             {
                 const string updateDiemSql = @"
 UPDATE dbo.KhachHang

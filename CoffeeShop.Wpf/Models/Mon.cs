@@ -1,5 +1,8 @@
 ﻿namespace CoffeeShop.Wpf.Models;
 
+/// <summary>
+/// Model quản lý món ăn/đồ uống (thành phẩm)
+/// </summary>
 public sealed class Mon
 {
     public int MonId { get; set; }
@@ -12,8 +15,16 @@ public sealed class Mon
 
     public decimal DonGia { get; set; }
 
+    /// <summary>
+    /// Tồn kho THÀNH PHẨM - Số lượng món có thể bán ngay (đơn vị: phần/ly/suất).
+    /// Trừ trực tiếp khi bán hàng để kiểm soát khả năng phục vụ.
+    /// Khác với NguyenLieu.TonKho (tồn nguyên liệu thô).
+    /// </summary>
     public int TonKho { get; set; }
 
+    /// <summary>
+    /// Ngưỡng cảnh báo tồn kho thành phẩm thấp
+    /// </summary>
     public int TonKhoToiThieu { get; set; }
 
     public string? HinhAnhPath { get; set; }

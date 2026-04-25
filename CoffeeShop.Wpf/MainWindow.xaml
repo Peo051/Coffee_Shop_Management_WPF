@@ -52,6 +52,12 @@
         <DataTemplate DataType="{x:Type viewModels:MonViewModel}">
             <views:MonView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:NguyenLieuViewModel}">
+            <views:NguyenLieuView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:CongThucMonViewModel}">
+            <views:CongThucMonView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:TrangThaiSanPhamViewModel}">
             <views:TrangThaiSanPhamView />
         </DataTemplate>
@@ -64,9 +70,12 @@
         <DataTemplate DataType="{x:Type viewModels:HoaDonNhapViewModel}">
             <views:HoaDonNhapView />
         </DataTemplate>
+        <!-- Module Quản lý bàn đã bị gỡ - không còn sử dụng -->
+        <!--
         <DataTemplate DataType="{x:Type viewModels:QuanLyBanViewModel}">
             <views:QuanLyBanView />
         </DataTemplate>
+        -->
         <DataTemplate DataType="{x:Type viewModels:CaLamViecViewModel}">
             <views:CaLamViecView />
         </DataTemplate>

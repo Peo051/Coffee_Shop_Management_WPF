@@ -58,7 +58,7 @@ public sealed class ExportPrintService : IExportPrintService
             $"Từ {fromDate:dd/MM/yyyy} đến {toDate:dd/MM/yyyy}, số dòng: {rows.Count}",
             cancellationToken);
 
-        return ServiceResult<string>.Success(outputPath, "Xuất PDF báo cáo đơn giản thành công.");
+        return ServiceResult<string>.Success(outputPath, "Đã tạo file PDF cơ bản để lưu trữ/xem thử.");
     }
 
     public async Task<ServiceResult<string>> XuatPdfBaoCaoNangCaoAsync(
@@ -96,10 +96,10 @@ public sealed class ExportPrintService : IExportPrintService
             $"Từ {fromDate:dd/MM/yyyy} đến {toDate:dd/MM/yyyy}, số dòng: {rows.Count}",
             cancellationToken);
 
-        return ServiceResult<string>.Success(outputPath, "Xuất PDF báo cáo nâng cao thành công.");
+        return ServiceResult<string>.Success(outputPath, "Đã tạo file PDF cơ bản để lưu trữ/xem thử.");
     }
 
-    public async Task<ServiceResult<string>> XuatExcelThongKeAsync(
+    public async Task<ServiceResult<string>> XuatCsvThongKeAsync(
         DateTime fromDate,
         DateTime toDate,
         string? outputDirectory = null,
@@ -135,12 +135,12 @@ public sealed class ExportPrintService : IExportPrintService
 
         await TryWriteAuditAsync(
             nguoiDungId,
-            "Xuất Excel thống kê",
+            "Xuất CSV thống kê",
             "ThongKe",
             $"Từ {fromDate:dd/MM/yyyy} đến {toDate:dd/MM/yyyy}, số dòng: {rows.Count}",
             cancellationToken);
 
-        return ServiceResult<string>.Success(outputPath, "Xuất Excel thống kê doanh thu thành công.");
+        return ServiceResult<string>.Success(outputPath, "Xuất thống kê doanh thu ra file CSV thành công.");
     }
 
     public async Task<ServiceResult<string>> InHoaDonBanAsync(
@@ -176,7 +176,7 @@ public sealed class ExportPrintService : IExportPrintService
             outputPath,
             printed
                 ? "Đã gửi lệnh in hóa đơn bán."
-                : "Không thể gửi lệnh in trực tiếp. Đã tạo file hóa đơn để in thủ công.");
+                : "Không thể gửi lệnh in trực tiếp, có thể do chưa kết nối máy in chuyên nghiệp. Đã tạo file TXT hóa đơn để in thủ công.");
     }
 
     public async Task<ServiceResult<string>> PreviewBaoCaoAsync(

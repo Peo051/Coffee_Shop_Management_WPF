@@ -98,6 +98,11 @@ internal static class SimplePdfWriter
             return string.Empty;
         }
 
+        // Lưu ý: PDFWriter này chỉ là một công cụ demo cơ bản cho mục đích học tập. 
+        // Trong môi trường WPF /.NET 8, việc vẽ Native PDF khá phức tạp (Font Unicode).
+        // Cách này đang chuyển toàn bộ string có dấu / ký tự không xác định về dạng ASCII bằng cách loại bỏ dấu tiếng Việt
+        // để đảm bảo không lỗi PDF header stream object (gây lỗi file).
+        // Cách tối ưu nhất cho báo cáo đồ án: Hãy dùng iText7, PDFSharp hoặc ReportViewer.
         var normalized = input.Normalize(NormalizationForm.FormD);
         var sb = new StringBuilder(normalized.Length);
         foreach (var c in normalized)

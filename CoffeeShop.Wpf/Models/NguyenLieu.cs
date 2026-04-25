@@ -1,7 +1,7 @@
 namespace CoffeeShop.Wpf.Models;
 
 /// <summary>
-/// Model quản lý nguyên liệu trong kho
+/// Model quản lý nguyên liệu thô trong kho (cà phê, sữa, đường...)
 /// </summary>
 public sealed class NguyenLieu
 {
@@ -11,8 +11,16 @@ public sealed class NguyenLieu
 
     public string DonViTinh { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Tồn kho NGUYÊN LIỆU THÔ - Số lượng nguyên liệu đầu vào (đơn vị: kg, lít, gram...).
+    /// Trừ tự động theo công thức món khi bán hàng để theo dõi chi phí thực tế.
+    /// Khác với Mon.TonKho (tồn thành phẩm).
+    /// </summary>
     public decimal TonKho { get; set; }
 
+    /// <summary>
+    /// Ngưỡng cảnh báo tồn kho nguyên liệu thấp
+    /// </summary>
     public decimal TonKhoToiThieu { get; set; }
 
     public decimal DonGiaNhap { get; set; }

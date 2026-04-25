@@ -26,7 +26,8 @@ public sealed class MainShellViewModel : BaseViewModel
     private readonly CanhBaoTonKhoViewModel _canhBaoTonKhoViewModel;
     private readonly TimKiemSanPhamViewModel _timKiemSanPhamViewModel;
     private readonly HoaDonNhapViewModel _hoaDonNhapViewModel;
-    private readonly QuanLyBanViewModel _quanLyBanViewModel;
+    // Module Quản lý bàn đã bị gỡ - không còn sử dụng
+    // private readonly QuanLyBanViewModel _quanLyBanViewModel;
     private readonly CaLamViecViewModel _caLamViecViewModel;
     private readonly HoaDonBanViewModel _hoaDonBanViewModel;
     private readonly LichSuHoaDonViewModel _lichSuHoaDonViewModel;
@@ -66,7 +67,8 @@ public sealed class MainShellViewModel : BaseViewModel
         CanhBaoTonKhoViewModel canhBaoTonKhoViewModel,
         TimKiemSanPhamViewModel timKiemSanPhamViewModel,
         HoaDonNhapViewModel hoaDonNhapViewModel,
-        QuanLyBanViewModel quanLyBanViewModel,
+        // Module Quản lý bàn đã bị gỡ
+        // QuanLyBanViewModel quanLyBanViewModel,
         CaLamViecViewModel caLamViecViewModel,
         HoaDonBanViewModel hoaDonBanViewModel,
         LichSuHoaDonViewModel lichSuHoaDonViewModel,
@@ -93,7 +95,8 @@ public sealed class MainShellViewModel : BaseViewModel
         _canhBaoTonKhoViewModel = canhBaoTonKhoViewModel;
         _timKiemSanPhamViewModel = timKiemSanPhamViewModel;
         _hoaDonNhapViewModel = hoaDonNhapViewModel;
-        _quanLyBanViewModel = quanLyBanViewModel;
+        // Module Quản lý bàn đã bị gỡ
+        // _quanLyBanViewModel = quanLyBanViewModel;
         _caLamViecViewModel = caLamViecViewModel;
         _hoaDonBanViewModel = hoaDonBanViewModel;
         _lichSuHoaDonViewModel = lichSuHoaDonViewModel;
@@ -168,7 +171,13 @@ public sealed class MainShellViewModel : BaseViewModel
             MenuItems.Add(item);
         }
 
-        SelectedMenuItem = MenuItems.FirstOrDefault();
+        // Ưu tiên hiển thị màn hình 'Ca làm việc' cho ThuNgân nếu đã đăng nhập
+        // Nếu có Service kiểm tra ca, có thể direct thẳng sang 'HoaDonBan' nếu đã có ca
+        var defaultSelectedItem = MenuItems.FirstOrDefault(m => m.Code == "CaLamViec") 
+                               ?? MenuItems.FirstOrDefault(m => m.Code == "HoaDonBan") 
+                               ?? MenuItems.FirstOrDefault();
+        
+        SelectedMenuItem = defaultSelectedItem;
         _dangXuatCommand.RaiseCanExecuteChanged();
 
         // Set navigation callback for dashboard
@@ -292,10 +301,11 @@ public sealed class MainShellViewModel : BaseViewModel
                 CurrentContentViewModel = _hoaDonNhapViewModel;
                 _ = _hoaDonNhapViewModel.LoadAsync();
                 return;
-            case "QuanLyBan":
-                CurrentContentViewModel = _quanLyBanViewModel;
-                _ = _quanLyBanViewModel.LoadAsync();
-                return;
+            // Module Quản lý bàn đã bị gỡ - không còn sử dụng
+            // case "QuanLyBan":
+            //     CurrentContentViewModel = _quanLyBanViewModel;
+            //     _ = _quanLyBanViewModel.LoadAsync();
+            //     return;
             case "CaLamViec":
                 CurrentContentViewModel = _caLamViecViewModel;
                 _ = _caLamViecViewModel.LoadAsync();
@@ -325,9 +335,11 @@ public sealed class MainShellViewModel : BaseViewModel
                 _ = _phaCheViewModel.LoadAsync();
                 return;
             default:
+                // Thay vì hiển thị "chưa triển khai", dùng thông báo lịch sự hơn phù hợp demo / nộp đồ án
+                // Đặc biệt khi vai trò ThuNgan truy cập vào một số module
                 CurrentContentViewModel = new ModulePlaceholderViewModel(
                     menuItem.DisplayName,
-                    "Module chưa triển khai. Theo kế hoạch chỉ được đóng gói demo/bộ nộp sau khi BaoCao pass.");
+                    "Chức năng này hiện không nằm trong phạm vi sử dụng của vai trò hiện tại hoặc đang được ẩn để tập trung nghiệp vụ chính.");
                 return;
         }
     }
@@ -342,7 +354,8 @@ public sealed class MainShellViewModel : BaseViewModel
             "ThongKe" => "Xem doanh thu, số lượng bán và kết quả kinh doanh theo thời gian.",
             "BaoCao" => "Tổng hợp số liệu để đối chiếu, in báo cáo.",
             "PhaChe" => "Theo dõi các đơn đã thanh toán và cập nhật trạng thái pha chế.",
-            "QuanLyBan" => "Theo dõi trạng thái bàn và hỗ trợ sắp xếp phục vụ tại quán.",
+            // Module Quản lý bàn đã bị gỡ
+            // "QuanLyBan" => "Theo dõi trạng thái bàn và hỗ trợ sắp xếp phục vụ tại quán.",
             "AuditLog" => "Xem lại lịch sử thao tác để kiểm tra và đối chiếu khi cần.",
             "QuanLyTaiKhoan" => "Quản lý tài khoản người dùng, vai trò và trạng thái hoạt động.",
             "DoiMatKhau" => "Đổi mật khẩu đăng nhập để bảo vệ tài khoản cá nhân.",

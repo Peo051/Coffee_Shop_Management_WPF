@@ -1,0 +1,25 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft.AspNetCore": "Information",
+      "CoffeeShop.PaymentApi": "Debug"
+    }
+  },
+  "ConnectionStrings": {
+    "CoffeeShopDb": "Server=YOUR_SERVER;Database=CoffeeShopDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
+  },
+  "PayOS": {
+    "ClientId": "YOUR_PAYOS_CLIENT_ID",
+    "ApiKey": "YOUR_PAYOS_API_KEY",
+    "ChecksumKey": "YOUR_PAYOS_CHECKSUM_KEY",
+    "BaseUrl": "https://api-merchant.payos.vn",
+    "ReturnUrl": "https://localhost:5001/payment/success",
+    "CancelUrl": "https://localhost:5001/payment/cancel"
+  },
+  "AllowedOrigins": [
+    "http://localhost",
+    "https://localhost",
+    "app://wpf"
+  ]
+}

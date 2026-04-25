@@ -11,7 +11,7 @@ public sealed class ExportPrintViewModel : BaseViewModel
     private readonly SessionService _sessionService;
     private readonly RelayCommand _xuatPdfBaoCaoDonGianCommand;
     private readonly RelayCommand _xuatPdfBaoCaoNangCaoCommand;
-    private readonly RelayCommand _xuatExcelThongKeCommand;
+    private readonly RelayCommand _xuatCsvThongKeCommand;
     private readonly RelayCommand _inHoaDonCommand;
     private readonly RelayCommand _previewBaoCaoCommand;
     private readonly RelayCommand _previewHoaDonCommand;
@@ -34,7 +34,7 @@ public sealed class ExportPrintViewModel : BaseViewModel
 
         _xuatPdfBaoCaoDonGianCommand = new RelayCommand(ExecuteXuatPdfBaoCaoDonGian, () => !IsBusy);
         _xuatPdfBaoCaoNangCaoCommand = new RelayCommand(ExecuteXuatPdfBaoCaoNangCao, () => !IsBusy);
-        _xuatExcelThongKeCommand = new RelayCommand(ExecuteXuatExcelThongKe, () => !IsBusy);
+        _xuatCsvThongKeCommand = new RelayCommand(ExecuteXuatCsvThongKe, () => !IsBusy);
         _inHoaDonCommand = new RelayCommand(ExecuteInHoaDon, () => !IsBusy);
         _previewBaoCaoCommand = new RelayCommand(ExecutePreviewBaoCao, () => !IsBusy);
         _previewHoaDonCommand = new RelayCommand(ExecutePreviewHoaDon, () => !IsBusy);
@@ -98,7 +98,7 @@ public sealed class ExportPrintViewModel : BaseViewModel
             {
                 _xuatPdfBaoCaoDonGianCommand.RaiseCanExecuteChanged();
                 _xuatPdfBaoCaoNangCaoCommand.RaiseCanExecuteChanged();
-                _xuatExcelThongKeCommand.RaiseCanExecuteChanged();
+                _xuatCsvThongKeCommand.RaiseCanExecuteChanged();
                 _inHoaDonCommand.RaiseCanExecuteChanged();
                 _previewBaoCaoCommand.RaiseCanExecuteChanged();
                 _previewHoaDonCommand.RaiseCanExecuteChanged();
@@ -111,7 +111,7 @@ public sealed class ExportPrintViewModel : BaseViewModel
 
     public ICommand XuatPdfBaoCaoNangCaoCommand => _xuatPdfBaoCaoNangCaoCommand;
 
-    public ICommand XuatExcelThongKeCommand => _xuatExcelThongKeCommand;
+    public ICommand XuatCsvThongKeCommand => _xuatCsvThongKeCommand;
 
     public ICommand InHoaDonCommand => _inHoaDonCommand;
 
@@ -148,10 +148,10 @@ public sealed class ExportPrintViewModel : BaseViewModel
                 ct));
     }
 
-    private async void ExecuteXuatExcelThongKe()
+    private async void ExecuteXuatCsvThongKe()
     {
         await RunAsync(ct =>
-            _exportPrintService.XuatExcelThongKeAsync(
+            _exportPrintService.XuatCsvThongKeAsync(
                 FromDate,
                 ToDate,
                 ThuMucXuat,

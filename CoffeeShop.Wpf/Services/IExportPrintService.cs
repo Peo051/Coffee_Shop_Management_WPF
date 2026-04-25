@@ -18,7 +18,7 @@ public interface IExportPrintService
         int? nguoiDungId = null,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<string>> XuatExcelThongKeAsync(
+    Task<ServiceResult<string>> XuatCsvThongKeAsync(
         DateTime fromDate,
         DateTime toDate,
         string? outputDirectory = null,

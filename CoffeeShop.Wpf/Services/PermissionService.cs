@@ -19,7 +19,7 @@ public sealed class PermissionService
                 new MenuItemModel("PhaChe", "Quầy pha chế"),
                 new MenuItemModel("ExportPrint", "Xuất / In"),
                 new MenuItemModel("LichSuHoaDon", "Lịch sử hóa đơn"),
-                new MenuItemModel("QuanLyBan", "Quản lý bàn"),
+                // Module "Quản lý bàn" đã bị gỡ - quán hoạt động theo mô hình order tại quầy, không quản lý bàn
                 new MenuItemModel("CaLamViec", "Ca làm việc"),
                 new MenuItemModel("TrangThaiSanPham", "Trạng thái sản phẩm"),
                 new MenuItemModel("CanhBaoTonKho", "Cảnh báo tồn kho thấp"),
@@ -51,17 +51,15 @@ public sealed class PermissionService
             ],
             "ThuNgan" =>
             [
-                new MenuItemModel("ThongKe", "Thống kê doanh thu"),
-                new MenuItemModel("BaoCao", "Báo cáo"),
-                new MenuItemModel("TopSanPhamBanChay", "Top sản phẩm bán chạy"),
-                new MenuItemModel("HoaDonBan", "Bán hàng tại quầy"),
-                new MenuItemModel("PhaChe", "Quầy pha chế"),
-                new MenuItemModel("ExportPrint", "Xuất / In"),
-                new MenuItemModel("LichSuHoaDon", "Lịch sử hóa đơn"),
-                new MenuItemModel("QuanLyBan", "Quản lý bàn"),
+                // Chỉ giữ các module trọng tâm đối với nhân viên thu ngân để dễ tập trung bảo vệ đồ án
                 new MenuItemModel("CaLamViec", "Ca làm việc"),
+                new MenuItemModel("HoaDonBan", "Bán hàng tại quầy"),
                 new MenuItemModel("KhachHang", "Khách hàng thân thiết"),
+                new MenuItemModel("LichSuHoaDon", "Lịch sử hóa đơn"),
+                new MenuItemModel("ThongKe", "Thống kê doanh thu"),
+                new MenuItemModel("ExportPrint", "Xuất / In"),
                 new MenuItemModel("DoiMatKhau", "Đổi mật khẩu")
+                // Module "Quản lý bàn" đã bị gỡ - quán hoạt động theo mô hình order tại quầy, không quản lý bàn
             ],
             _ => []
         };

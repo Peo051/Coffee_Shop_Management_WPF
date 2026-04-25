@@ -178,7 +178,7 @@
                            Style="{StaticResource CardTitleText}"
                            Text="🧾 Hóa đơn hiện tại" />
 
-                <!-- Thông tin đơn: Bàn, Khách hàng, Khuyến mãi -->
+                <!-- Thông tin đơn: Khách hàng, Khuyến mãi -->
                 <StackPanel Grid.Row="1" Margin="0,10,0,0">
                     <!-- Hình thức phục vụ -->
                     <TextBlock Style="{StaticResource FieldLabelText}" Text="Hình thức phục vụ" />
@@ -501,7 +501,7 @@
                                            FontStyle="Italic"
                                            Foreground="{DynamicResource MutedTextBrush}"
                                            TextWrapping="Wrap"
-                                           Text="💡 1 điểm = 1.000 đ. Điểm cộng mới tính trên số tiền cuối cùng." />
+                                           Text="💡 1 điểm = 100đ (tối đa 500 điểm = 50,000đ/đơn). Điểm cộng: 10,000đ = 1 điểm." />
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -602,13 +602,239 @@
                                Text="Ghi chú hóa đơn" />
                     <TextBox Text="{Binding GhiChuHoaDon, UpdateSourceTrigger=PropertyChanged}" />
 
-                    <!-- Nút thanh toán -->
+                    <!-- Nút thanh toán thường -->
                     <Button Content="💳 Thanh toán &amp; tạo hóa đơn"
                             Margin="0,10,0,0"
                             FontSize="14"
                             MinHeight="42"
-                            Style="{StaticResource ButtonPrimary}"
-                            Command="{Binding LuuHoaDonCommand}" />
+                            Command="{Binding LuuHoaDonCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ButtonPrimary}">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsQrPaymentSelected}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Nút tạo hóa đơn chờ QR -->
+                    <Button Content="📱 Tạo hóa đơn chờ thanh toán QR"
+                            Margin="0,10,0,0"
+                            FontSize="14"
+                            MinHeight="42"
+                            Command="{Binding LuuHoaDonCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ButtonPrimary}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsQrPaymentSelected}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Cảnh báo QR Payment -->
+                    <TextBlock Margin="0,6,0,0"
+                               FontSize="11"
+                               FontStyle="Italic"
+                               Foreground="{DynamicResource MutedTextBrush}"
+                               TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsQrPaymentSelected}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                        <Run Text="ℹ️ Với QR payment, hóa đơn chỉ được xác nhận thanh toán sau khi hệ thống nhận trạng thái PAID từ backend." />
+                    </TextBlock>
+
+                    <!-- ===== KHU VỰC QR PAYMENT ===== -->
+                    <Border Margin="0,10,0,0"
+                            Padding="12,10"
+                            Background="{DynamicResource CardMutedBackgroundBrush}"
+                            BorderBrush="{DynamicResource PrimaryBrush}"
+                            BorderThickness="2"
+                            CornerRadius="10">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <!-- Hiển thị khi chọn QR Payment hoặc đã có hóa đơn pending -->
+                                    <DataTrigger Binding="{Binding IsQrPaymentSelected}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding HoaDonBanIdDaTao, Converter={StaticResource IntToBoolConverter}}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel>
+                            <TextBlock Text="📱 QR Code Thanh Toán"
+                                       FontSize="14"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource PrimaryBrush}"
+                                       HorizontalAlignment="Center" />
+
+                            <!-- Hiển thị QR code -->
+                            <Border Margin="0,8,0,0"
+                                    Background="White"
+                                    BorderBrush="{DynamicResource CardBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="10">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsWaitingQrPayment}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel>
+                                    <!-- QR Code Image -->
+                                    <Image Source="{Binding QrCodeImageSource}"
+                                           Width="200"
+                                           Height="200"
+                                           Stretch="Uniform"
+                                           HorizontalAlignment="Center" />
+                                    
+                                    <!-- Fallback nếu QR không hiển thị -->
+                                    <TextBlock Margin="0,4,0,0"
+                                               FontSize="10"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               HorizontalAlignment="Center"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               Text="(Nếu QR không hiển thị, dùng link bên dưới)" />
+                                    
+                                    <!-- Trạng thái -->
+                                    <TextBlock Margin="0,8,0,0"
+                                               Text="{Binding PaymentStatusDisplay, Mode=OneWay}"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryBrush}"
+                                               HorizontalAlignment="Center"
+                                               TextAlignment="Center" />
+
+                                    <!-- Thời gian hết hạn -->
+                                    <TextBlock Margin="0,4,0,0"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               HorizontalAlignment="Center"
+                                               TextAlignment="Center">
+                                        <Run Text="Hết hạn lúc: " />
+                                        <Run Text="{Binding QrExpiredAt, Mode=OneWay, StringFormat=HH:mm:ss dd/MM/yyyy}" />
+                                    </TextBlock>
+
+                                    <!-- Link checkout -->
+                                    <TextBlock Margin="0,6,0,0"
+                                               FontSize="10"
+                                               FontStyle="Italic"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               HorizontalAlignment="Center"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap">
+                                        <Run Text="💡 Link thanh toán:" />
+                                        <LineBreak />
+                                        <Hyperlink NavigateUri="{Binding CheckoutUrl, Mode=OneWay}"
+                                                   RequestNavigate="Hyperlink_RequestNavigate">
+                                            <Run Text="{Binding CheckoutUrl, Mode=OneWay}" />
+                                        </Hyperlink>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Nút tạo QR -->
+                            <Button Content="📱 Tạo QR Thanh Toán"
+                                    Margin="0,8,0,0"
+                                    MinHeight="38"
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    Command="{Binding TaoQrThanhToanCommand}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource ButtonPrimary}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsWaitingQrPayment}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsPaymentPaid}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+
+                            <!-- Nút kiểm tra và hủy -->
+                            <Grid Margin="0,6,0,0">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsWaitingQrPayment}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                
+                                <Button Grid.Column="0"
+                                        Content="🔄 Kiểm Tra"
+                                        MinHeight="36"
+                                        FontSize="12"
+                                        Style="{StaticResource ButtonSecondary}"
+                                        Command="{Binding KiemTraTrangThaiThanhToanCommand}" />
+                                
+                                <Button Grid.Column="2"
+                                        Content="❌ Hủy QR"
+                                        MinHeight="36"
+                                        FontSize="12"
+                                        Style="{StaticResource ButtonDanger}"
+                                        Command="{Binding HuyQrThanhToanCommand}" />
+                            </Grid>
+
+                            <!-- Thông báo đã thanh toán -->
+                            <Border Margin="0,8,0,0"
+                                    Padding="10,8"
+                                    Background="{DynamicResource SuccessBrush}"
+                                    CornerRadius="6">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPaymentPaid}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="✅ Đã thanh toán thành công! Có thể in bill và chuyển pha chế."
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="White"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center" />
+                            </Border>
+                        </StackPanel>
+                    </Border>
 
                     <!-- Nút phụ -->
                     <Grid Margin="0,4,0,0">

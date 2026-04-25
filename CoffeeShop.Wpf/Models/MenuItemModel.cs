@@ -27,7 +27,8 @@ public sealed class MenuItemModel
             "HoaDonBan" => "Nghiệp vụ",
             "ExportPrint" => "Nghiệp vụ",
             "LichSuHoaDon" => "Nghiệp vụ",
-            "QuanLyBan" => "Vận hành",
+            // Module Quản lý bàn đã bị gỡ
+            // "QuanLyBan" => "Vận hành",
             "CaLamViec" => "Vận hành",
             "TrangThaiSanPham" => "Vận hành",
             "CanhBaoTonKho" => "Vận hành",

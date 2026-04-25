@@ -7,6 +7,7 @@ public interface IHoaDonBanRepository
     Task<int> CreateAsync(
         HoaDonBan hoaDonBan,
         IReadOnlyList<ChiTietHoaDonBan> chiTietHoaDonBans,
+        bool skipInventoryDeduction = false,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<HoaDonBan>> GetByDateRangeAsync(

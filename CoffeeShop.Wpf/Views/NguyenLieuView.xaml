@@ -25,7 +25,7 @@
                     <TextBlock Style="{StaticResource SectionHeader}" Text="Quản lý nguyên liệu" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{DynamicResource MutedTextBrush}"
-                               Text="Tạo nhanh nguyên liệu mới và quản lý thông tin tồn kho, đơn giá nhập." />
+                               Text="Tạo nhanh nguyên liệu mới và quản lý tồn kho nguyên liệu thô (cà phê, sữa, đường...)." />
 
                     <TextBlock Margin="0,14,0,0" FontWeight="SemiBold" Text="Tên nguyên liệu" />
                     <TextBox Text="{Binding TenNguyenLieu, UpdateSourceTrigger=PropertyChanged}" MaxLength="150" />
@@ -61,18 +61,23 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0">
-                            <TextBlock FontWeight="SemiBold" Text="Tồn kho ban đầu" />
+                            <TextBlock FontWeight="SemiBold" Text="Tồn kho nguyên liệu ban đầu" />
                             <TextBox Text="{Binding TonKho, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="0,2,0,0"
+                                       FontSize="11"
+                                       FontStyle="Italic"
+                                       Foreground="{DynamicResource MutedTextBrush}"
+                                       Text="Số lượng nguyên liệu thô (kg/lít/gram...)" />
                         </StackPanel>
 
                         <StackPanel Grid.Column="2">
-                            <TextBlock FontWeight="SemiBold" Text="Tồn kho tối thiểu" />
+                            <TextBlock FontWeight="SemiBold" Text="Ngưỡng cảnh báo nguyên liệu" />
                             <TextBox Text="{Binding TonKhoToiThieu, UpdateSourceTrigger=PropertyChanged}" />
                             <TextBlock Margin="0,2,0,0"
                                        FontSize="11"
                                        FontStyle="Italic"
                                        Foreground="{DynamicResource MutedTextBrush}"
-                                       Text="Cảnh báo khi tồn kho thấp" />
+                                       Text="Cảnh báo khi tồn nguyên liệu ≤ giá trị này" />
                         </StackPanel>
                     </Grid>
 

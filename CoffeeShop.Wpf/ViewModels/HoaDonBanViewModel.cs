@@ -1,9 +1,13 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
+using System.Net.Http;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using CoffeeShop.Wpf.Commands;
 using CoffeeShop.Wpf.Models;
 using CoffeeShop.Wpf.Services;
+using QRCoder;
 
 namespace CoffeeShop.Wpf.ViewModels;
 
@@ -11,7 +15,6 @@ public sealed class HoaDonBanViewModel : BaseViewModel
 {
     private readonly IHoaDonBanService _hoaDonBanService;
     private readonly IMonService _monService;
-    private readonly IBanService _banService;
     private readonly ICaLamViecService _caLamViecService;
     private readonly IKhachHangService _khachHangService;
     private readonly IKhuyenMaiService _khuyenMaiService;
@@ -30,7 +33,6 @@ public sealed class HoaDonBanViewModel : BaseViewModel
     private string _selectedDanhMuc = "Tất cả";
 
     private Mon? _selectedMon;
-    private Ban? _selectedBan;
     private KhachHang? _selectedKhachHang;
     private KhuyenMai? _selectedKhuyenMai;
 
@@ -69,7 +71,6 @@ public sealed class HoaDonBanViewModel : BaseViewModel
     public HoaDonBanViewModel(
         IHoaDonBanService hoaDonBanService,
         IMonService monService,
-        IBanService banService,
         ICaLamViecService caLamViecService,
         IKhachHangService khachHangService,
         IKhuyenMaiService khuyenMaiService,
@@ -77,7 +78,6 @@ public sealed class HoaDonBanViewModel : BaseViewModel
     {
         _hoaDonBanService = hoaDonBanService;
         _monService = monService;
-        _banService = banService;
         _caLamViecService = caLamViecService;
         _khachHangService = khachHangService;
         _khuyenMaiService = khuyenMaiService;
@@ -86,7 +86,6 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         Mons = new ObservableCollection<Mon>();
         MonsHienThi = new ObservableCollection<Mon>();
         DanhMucMons = new ObservableCollection<string>();
-        Bans = new ObservableCollection<Ban>();
         KhachHangs = new ObservableCollection<KhachHang>();
         KhuyenMais = new ObservableCollection<KhuyenMai>();
         ChiTietLines = new ObservableCollection<ChiTietHoaDonBanHienThi>();
@@ -99,6 +98,8 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         _giamSoLuongCommand = new RelayCommand<ChiTietHoaDonBanHienThi>(ExecuteGiamSoLuong);
         _xoaMonCommand = new RelayCommand<ChiTietHoaDonBanHienThi>(ExecuteXoaMon);
         _themMonNhanhCommand = new RelayCommand<Mon>(ExecuteThemMonNhanh);
+
+        InitializeQrPaymentCommands();
     }
 
     public ObservableCollection<Mon> Mons { get; }
@@ -106,8 +107,6 @@ public sealed class HoaDonBanViewModel : BaseViewModel
     public ObservableCollection<Mon> MonsHienThi { get; }
 
     public ObservableCollection<string> DanhMucMons { get; }
-
-    public ObservableCollection<Ban> Bans { get; }
 
     public ObservableCollection<KhachHang> KhachHangs { get; }
 
@@ -117,7 +116,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
 
     /// <summary>Danh sách hình thức thanh toán hiển thị trên ComboBox</summary>
     public IReadOnlyList<string> DanhSachHinhThucThanhToan { get; } =
-        ["Tiền mặt", "Chuyển khoản", "Thẻ", "Ví điện tử"];
+        ["Tiền mặt", "Chuyển khoản", "Thẻ", "Ví điện tử", "QR Payment"];
 
     /// <summary>Danh sách kích cỡ đồ uống</summary>
     public IReadOnlyList<string> DanhSachKichCo { get; } =
@@ -189,18 +188,6 @@ public sealed class HoaDonBanViewModel : BaseViewModel
                 }
 
                 _themDongCommand.RaiseCanExecuteChanged();
-            }
-        }
-    }
-
-    public Ban? SelectedBan
-    {
-        get => _selectedBan;
-        set
-        {
-            if (SetProperty(ref _selectedBan, value))
-            {
-                _luuHoaDonCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -338,6 +325,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             {
                 OnPropertyChanged(nameof(IsThanhToanTienMat));
                 OnPropertyChanged(nameof(IsThanhToanKhongDungTienMat));
+                OnPropertyChanged(nameof(IsQrPaymentSelected));
 
                 if (IsThanhToanTienMat)
                 {
@@ -359,7 +347,11 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         string.Equals(_hinhThucThanhToanDuocChon, "Tiền mặt", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>True khi không phải tiền mặt (dùng cho Visibility binding)</summary>
-    public bool IsThanhToanKhongDungTienMat => !IsThanhToanTienMat;
+    public bool IsThanhToanKhongDungTienMat => !IsThanhToanTienMat && !IsQrPaymentSelected;
+
+    /// <summary>True khi chọn QR Payment</summary>
+    public bool IsQrPaymentSelected =>
+        string.Equals(_hinhThucThanhToanDuocChon, "QR Payment", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Tiền khách đưa (text binding)</summary>
     public string TienKhachDuaText
@@ -481,7 +473,6 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         try
         {
             await LoadMonAsync(cancellationToken);
-            await LoadBanAsync(cancellationToken);
             await LoadKhachHangAsync(cancellationToken);
             await LoadKhuyenMaiAsync(cancellationToken);
             await LoadThongTinCaDangMoAsync(cancellationToken);
@@ -660,11 +651,30 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             return;
         }
 
+        if (ChiTietLines.Count == 0)
+        {
+            ErrorMessage = "Vui lòng thêm ít nhất 1 món vào hóa đơn.";
+            return;
+        }
+
+        var chiTietInputs = ChiTietLines
+            .Select(x => new HoaDonBanChiTietInputModel
+            {
+                MonId = x.MonId,
+                SoLuong = x.SoLuong,
+                DonGiaBan = x.DonGiaBan,
+                KichCo = x.KichCo,
+                PhuThuKichCo = x.PhuThuKichCo,
+                GhiChuMon = x.GhiChuMon
+            })
+            .ToList();
+
         if (SelectedKhuyenMai is not null)
         {
             var checkKhuyenMai = await _khuyenMaiService.ApDungKhuyenMaiAsync(
                 SelectedKhuyenMai.KhuyenMaiId,
                 TongTien,
+                chiTietInputs,
                 DateTime.Now,
                 cancellationToken);
 
@@ -681,46 +691,34 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             SoTienGiamKhuyenMai = 0;
         }
 
-        // === Validate thanh toán ===
-        if (ChiTietLines.Count == 0)
-        {
-            ErrorMessage = "Vui lòng thêm ít nhất 1 món vào hóa đơn.";
-            return;
-        }
+        // === Validate thanh toán theo hình thức ===
+        bool isQrPayment = IsQrPaymentSelected;
 
-        if (IsThanhToanTienMat)
+        if (!isQrPayment)
         {
-            if (!TryParseDecimal(TienKhachDuaText, out var tienDua) || tienDua <= 0)
+            // Thanh toán thường: validate tiền mặt hoặc mã giao dịch
+            if (IsThanhToanTienMat)
             {
-                ErrorMessage = "Vui lòng nhập số tiền khách đưa hợp lệ.";
-                return;
+                if (!TryParseDecimal(TienKhachDuaText, out var tienDua) || tienDua <= 0)
+                {
+                    ErrorMessage = "Vui lòng nhập số tiền khách đưa hợp lệ.";
+                    return;
+                }
+                if (tienDua < ThanhToan)
+                {
+                    ErrorMessage = $"Tiền khách đưa ({tienDua:N0}) không đủ thanh toán ({ThanhToan:N0}).";
+                    return;
+                }
             }
-            if (tienDua < ThanhToan)
+            else
             {
-                ErrorMessage = $"Tiền khách đưa ({tienDua:N0}) không đủ thanh toán ({ThanhToan:N0}).";
-                return;
+                if (string.IsNullOrWhiteSpace(MaGiaoDich))
+                {
+                    ErrorMessage = $"Vui lòng nhập mã giao dịch cho hình thức {HinhThucThanhToanDuocChon}.";
+                    return;
+                }
             }
         }
-        else
-        {
-            if (string.IsNullOrWhiteSpace(MaGiaoDich))
-            {
-                ErrorMessage = $"Vui lòng nhập mã giao dịch cho hình thức {HinhThucThanhToanDuocChon}.";
-                return;
-            }
-        }
-
-        var chiTietInputs = ChiTietLines
-            .Select(x => new HoaDonBanChiTietInputModel
-            {
-                MonId = x.MonId,
-                SoLuong = x.SoLuong,
-                DonGiaBan = x.DonGiaBan,
-                KichCo = x.KichCo,
-                PhuThuKichCo = x.PhuThuKichCo,
-                GhiChuMon = x.GhiChuMon
-            })
-            .ToList();
 
         IsBusy = true;
 
@@ -748,6 +746,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
                 string.IsNullOrWhiteSpace(GhiChuHoaDon) ? null : GhiChuHoaDon,
                 HinhThucPhucVu,
                 diemSuDung,
+                isQrPayment, // Đánh dấu là QR pending payment
                 cancellationToken);
 
             if (!result.IsSuccess)
@@ -760,24 +759,51 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             var soGoiMon = hoaDon?.SoGoiMonHienThi ?? "---";
             var maHoaDon = $"HD{hoaDon?.HoaDonBanId ?? 0:D5}";
 
-            // Thông báo chi tiết theo hình thức thanh toán
-            var msgBuilder = $"Thanh toán thành công. Số gọi món: {soGoiMon}. Mã hóa đơn: {maHoaDon}. Hình thức: {HinhThucThanhToanDuocChon}.";
-            if (IsThanhToanTienMat)
+            // Lưu ID hóa đơn
+            HoaDonBanIdDaTao = hoaDon?.HoaDonBanId ?? 0;
+
+            if (isQrPayment)
             {
-                msgBuilder += $" Tiền khách đưa: {hoaDon?.TienKhachDua ?? 0:N0} đ. Tiền thối lại: {hoaDon?.TienThoiLai ?? 0:N0} đ.";
+                // QR Payment: Tự động tạo QR sau khi tạo hóa đơn pending
+                SuccessMessage = $"✅ Đã tạo hóa đơn chờ thanh toán. Số gọi món: {soGoiMon}. Mã: {maHoaDon}. Đang tạo QR...";
+                
+                // Tự động tạo QR
+                try
+                {
+                    await TaoQrThanhToanAsync(cancellationToken);
+                    
+                    // Nếu tạo QR thành công, message đã được set trong TaoQrThanhToanAsync
+                    if (string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        SuccessMessage = $"✅ Đã tạo hóa đơn và QR thanh toán. Số gọi món: {soGoiMon}. Mã: {maHoaDon}.";
+                    }
+                }
+                catch (Exception qrEx)
+                {
+                    ErrorMessage = $"Tạo hóa đơn thành công nhưng tạo QR thất bại: {qrEx.Message}";
+                    // Log error (logger not available in ViewModel)
+                }
             }
             else
             {
-                msgBuilder += $" Mã giao dịch: {hoaDon?.MaGiaoDich ?? "N/A"}.";
-            }
-            SuccessMessage = msgBuilder;
+                // Thanh toán thường: Thông báo thành công
+                var msgBuilder = $"Thanh toán thành công. Số gọi món: {soGoiMon}. Mã hóa đơn: {maHoaDon}. Hình thức: {HinhThucThanhToanDuocChon}.";
+                if (IsThanhToanTienMat)
+                {
+                    msgBuilder += $" Tiền khách đưa: {hoaDon?.TienKhachDua ?? 0:N0} đ. Tiền thối lại: {hoaDon?.TienThoiLai ?? 0:N0} đ.";
+                }
+                else
+                {
+                    msgBuilder += $" Mã giao dịch: {hoaDon?.MaGiaoDich ?? "N/A"}.";
+                }
+                SuccessMessage = msgBuilder;
 
-            await LoadMonAsync(cancellationToken);
-            await LoadBanAsync(cancellationToken);
-            await LoadKhachHangAsync(cancellationToken);
-            await LoadKhuyenMaiAsync(cancellationToken);
-            await LoadThongTinCaDangMoAsync(cancellationToken);
-            ResetFormAfterSave();
+                await LoadMonAsync(cancellationToken);
+                await LoadKhachHangAsync(cancellationToken);
+                await LoadKhuyenMaiAsync(cancellationToken);
+                await LoadThongTinCaDangMoAsync(cancellationToken);
+                ResetFormAfterSave();
+            }
         }
         catch (Exception ex)
         {
@@ -794,7 +820,6 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         ErrorMessage = string.Empty;
         SuccessMessage = string.Empty;
 
-        SelectedBan = null;
         SelectedMon = null;
         SelectedKhachHang = null;
         SelectedKhuyenMai = null;
@@ -820,6 +845,9 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         SelectedDongChiTiet = null;
         ChiTietLines.Clear();
         RecalculateTotals();
+
+        // Reset QR payment state khi làm mới
+        ResetQrPaymentState();
     }
 
     private void ExecuteTangSoLuong(ChiTietHoaDonBanHienThi? chiTiet)
@@ -958,37 +986,6 @@ public sealed class HoaDonBanViewModel : BaseViewModel
     }
 
 
-    private async Task LoadBanAsync(CancellationToken cancellationToken)
-    {
-        var banResult = await _banService.GetDanhSachBanAsync(
-            null,
-            null,
-            true,
-            null,
-            cancellationToken);
-
-        if (!banResult.IsSuccess || banResult.Data is null)
-        {
-            ErrorMessage = banResult.Message;
-            return;
-        }
-
-        Bans.Clear();
-        // Chỉ hiển thị bàn Trống khi lập hóa đơn bán
-        foreach (var ban in banResult.Data
-                     .Where(x => string.Equals(x.TrangThaiBan, TrangThaiBanConst.Trong, StringComparison.OrdinalIgnoreCase))
-                     .OrderBy(x => x.TenKhuVuc)
-                     .ThenBy(x => x.TenBan))
-        {
-            Bans.Add(ban);
-        }
-
-        if (SelectedBan is null && Bans.Count > 0)
-        {
-            SelectedBan = Bans[0];
-        }
-    }
-
     private async Task LoadKhachHangAsync(CancellationToken cancellationToken)
     {
         var result = await _khachHangService.GetDanhSachKhachHangAsync(null, true, cancellationToken);
@@ -1078,6 +1075,8 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         SelectedDongChiTiet = null;
         ChiTietLines.Clear();
         RecalculateTotals();
+
+        // KHÔNG reset QR payment state - để user có thể tạo QR sau khi lưu hóa đơn
     }
 
     private void RecalculateTotals()
@@ -1098,8 +1097,11 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             // Giới hạn điểm dùng không vượt quá điểm khách có
             diemSuDung = Math.Min(diemNhap, SelectedKhachHang.DiemTichLuy);
             
-            // Tính số tiền giảm từ điểm (1 điểm = 1.000đ)
-            var soTienGiamTuDiemTamTinh = diemSuDung * 1000m;
+            // Tính số tiền giảm từ điểm (1 điểm = 100đ, tối đa 50,000đ)
+            var soTienGiamTuDiemTamTinh = diemSuDung * 100m;
+            
+            // Giới hạn tối đa 50,000đ cho mỗi đơn hàng
+            soTienGiamTuDiemTamTinh = Math.Min(soTienGiamTuDiemTamTinh, 50000m);
             
             // Số tiền sau giảm giá và khuyến mãi
             var soTienSauGiamKhac = TongTien - giamGiaValue - SoTienGiamKhuyenMai;
@@ -1110,7 +1112,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             // Cập nhật lại điểm sử dụng thực tế nếu bị giới hạn
             if (SoTienGiamTuDiem < soTienGiamTuDiemTamTinh)
             {
-                diemSuDung = (int)Math.Floor(SoTienGiamTuDiem / 1000m);
+                diemSuDung = (int)Math.Floor(SoTienGiamTuDiem / 100m);
             }
         }
         else
@@ -1121,7 +1123,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         var thanhToan = TongTien - giamGiaValue - SoTienGiamKhuyenMai - SoTienGiamTuDiem;
         ThanhToan = thanhToan < 0 ? 0 : thanhToan;
 
-        // Điểm cộng tính trên số tiền cuối cùng khách thật sự thanh toán
+        // Điểm cộng tính trên số tiền cuối cùng khách thật sự thanh toán (10,000đ = 1 điểm)
         DiemCongDuKien = SelectedKhachHang is null
             ? 0
             : (int)Math.Floor(ThanhToan / 10000m);
@@ -1258,6 +1260,359 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         "XL" => 10000m,
         _ => 0m
     };
+
+    // ==================== QR PAYMENT ====================
+
+    private readonly PaymentApiClient _paymentApiClient = new();
+    private RelayCommand? _taoQrThanhToanCommand;
+    private RelayCommand? _kiemTraTrangThaiThanhToanCommand;
+    private RelayCommand? _huyQrThanhToanCommand;
+
+    private int _hoaDonBanIdDaTao;
+    private string? _qrCodeUrl;
+    private string? _checkoutUrl;
+    private string? _paymentStatus;
+    private bool _isWaitingQrPayment;
+    private DateTime? _qrExpiredAt;
+    private BitmapImage? _qrCodeImageSource;
+
+    /// <summary>ID hóa đơn đã tạo (sau khi lưu thành công)</summary>
+    public int HoaDonBanIdDaTao
+    {
+        get => _hoaDonBanIdDaTao;
+        private set => SetProperty(ref _hoaDonBanIdDaTao, value);
+    }
+
+    /// <summary>URL QR code để hiển thị</summary>
+    public string? QrCodeUrl
+    {
+        get => _qrCodeUrl;
+        private set => SetProperty(ref _qrCodeUrl, value);
+    }
+
+    /// <summary>QR Code image source để bind vào Image.Source</summary>
+    public BitmapImage? QrCodeImageSource
+    {
+        get => _qrCodeImageSource;
+        private set => SetProperty(ref _qrCodeImageSource, value);
+    }
+
+    /// <summary>URL checkout trên web</summary>
+    public string? CheckoutUrl
+    {
+        get => _checkoutUrl;
+        private set => SetProperty(ref _checkoutUrl, value);
+    }
+
+    /// <summary>Trạng thái payment (PENDING, PAID, CANCELLED)</summary>
+    public string? PaymentStatus
+    {
+        get => _paymentStatus;
+        private set
+        {
+            if (SetProperty(ref _paymentStatus, value))
+            {
+                OnPropertyChanged(nameof(IsPaymentPending));
+                OnPropertyChanged(nameof(IsPaymentPaid));
+                OnPropertyChanged(nameof(PaymentStatusDisplay));
+            }
+        }
+    }
+
+    /// <summary>Đang chờ thanh toán QR</summary>
+    public bool IsWaitingQrPayment
+    {
+        get => _isWaitingQrPayment;
+        private set
+        {
+            if (SetProperty(ref _isWaitingQrPayment, value))
+            {
+                _taoQrThanhToanCommand?.RaiseCanExecuteChanged();
+                _kiemTraTrangThaiThanhToanCommand?.RaiseCanExecuteChanged();
+                _huyQrThanhToanCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    /// <summary>Thời gian hết hạn QR</summary>
+    public DateTime? QrExpiredAt
+    {
+        get => _qrExpiredAt;
+        private set => SetProperty(ref _qrExpiredAt, value);
+    }
+
+    public bool IsPaymentPending => PaymentStatus == "PENDING";
+    public bool IsPaymentPaid => PaymentStatus == "PAID";
+
+    public string PaymentStatusDisplay => PaymentStatus switch
+    {
+        "PENDING" => "⏳ Chờ thanh toán",
+        "PAID" => "✅ Đã thanh toán",
+        "CANCELLED" => "❌ Đã hủy",
+        _ => ""
+    };
+
+    public ICommand TaoQrThanhToanCommand => _taoQrThanhToanCommand ?? throw new InvalidOperationException("Command not initialized");
+    public ICommand KiemTraTrangThaiThanhToanCommand => _kiemTraTrangThaiThanhToanCommand ?? throw new InvalidOperationException("Command not initialized");
+    public ICommand HuyQrThanhToanCommand => _huyQrThanhToanCommand ?? throw new InvalidOperationException("Command not initialized");
+
+    private void InitializeQrPaymentCommands()
+    {
+        _taoQrThanhToanCommand = new RelayCommand(ExecuteTaoQrThanhToan, CanExecuteTaoQrThanhToan);
+        _kiemTraTrangThaiThanhToanCommand = new RelayCommand(ExecuteKiemTraTrangThaiThanhToan, CanExecuteKiemTraTrangThaiThanhToan);
+        _huyQrThanhToanCommand = new RelayCommand(ExecuteHuyQrThanhToan, CanExecuteHuyQrThanhToan);
+    }
+
+    private bool CanExecuteTaoQrThanhToan()
+    {
+        return !IsBusy && HoaDonBanIdDaTao > 0 && !IsWaitingQrPayment && PaymentStatus != "PAID";
+    }
+
+    private bool CanExecuteKiemTraTrangThaiThanhToan()
+    {
+        // Cho phép kiểm tra khi có HoaDonBanId, không cần IsWaitingQrPayment
+        // Vì có thể reload app hoặc chuyển hóa đơn khác
+        return !IsBusy && HoaDonBanIdDaTao > 0;
+    }
+
+    private bool CanExecuteHuyQrThanhToan()
+    {
+        return !IsBusy && IsWaitingQrPayment && HoaDonBanIdDaTao > 0 && PaymentStatus == "PENDING";
+    }
+
+    private async void ExecuteTaoQrThanhToan()
+    {
+        await TaoQrThanhToanAsync();
+    }
+
+    private async Task TaoQrThanhToanAsync(CancellationToken cancellationToken = default)
+    {
+        if (HoaDonBanIdDaTao <= 0)
+        {
+            ErrorMessage = "Chưa có hóa đơn để tạo QR thanh toán.";
+            return;
+        }
+
+        // Không check IsBusy để cho phép auto-call sau khi tạo hóa đơn
+        var wasBusy = IsBusy;
+        if (!wasBusy)
+        {
+            IsBusy = true;
+        }
+
+        try
+        {
+            // Creating QR payment for HoaDonBanId
+
+            var response = await _paymentApiClient.CreateQrPaymentAsync(HoaDonBanIdDaTao, cancellationToken);
+
+            if (response == null)
+            {
+                ErrorMessage = "Không thể tạo QR thanh toán. Vui lòng kiểm tra kết nối backend API.";
+                // CreateQrPaymentAsync returned null
+                return;
+            }
+
+            // Set QR data
+            QrCodeUrl = response.QRCodeRaw;
+            CheckoutUrl = response.CheckoutUrl;
+            PaymentStatus = response.PaymentStatus;
+            QrExpiredAt = response.QRExpiredAt;
+            IsWaitingQrPayment = true;
+
+            // Generate QR code image từ qrCodeRaw
+            if (!string.IsNullOrWhiteSpace(response.QRCodeRaw))
+            {
+                QrCodeImageSource = GenerateQrCodeImageSource(response.QRCodeRaw);
+            }
+
+            // QR payment created successfully
+
+            // Chỉ set success message nếu không phải auto-call
+            if (!wasBusy)
+            {
+                SuccessMessage = $"✅ Đã tạo QR thanh toán. Vui lòng quét mã QR để thanh toán {response.Amount:N0} đ.";
+            }
+        }
+        catch (HttpRequestException httpEx)
+        {
+            var errorMsg = $"Lỗi kết nối API: {httpEx.Message}";
+            ErrorMessage = errorMsg;
+            // HTTP error creating QR
+        }
+        catch (Exception ex)
+        {
+            var errorMsg = $"Lỗi tạo QR thanh toán: {ex.Message}";
+            ErrorMessage = errorMsg;
+            // Error creating QR
+        }
+        finally
+        {
+            if (!wasBusy)
+            {
+                IsBusy = false;
+            }
+        }
+    }
+
+    private async void ExecuteKiemTraTrangThaiThanhToan()
+    {
+        await KiemTraTrangThaiThanhToanAsync();
+    }
+
+    private async Task KiemTraTrangThaiThanhToanAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsBusy || HoaDonBanIdDaTao <= 0)
+        {
+            return;
+        }
+
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+        IsBusy = true;
+
+        try
+        {
+            var status = await _paymentApiClient.GetPaymentStatusAsync(HoaDonBanIdDaTao, cancellationToken);
+
+            if (status == null)
+            {
+                ErrorMessage = "Không thể kiểm tra trạng thái thanh toán.";
+                return;
+            }
+
+            PaymentStatus = status.PaymentStatus;
+            QrExpiredAt = status.QRExpiredAt;
+
+            if (status.PaymentStatus == "PAID")
+            {
+                IsWaitingQrPayment = false;
+                SuccessMessage = $"🎉 Thanh toán thành công! Mã giao dịch: {status.MaGiaoDich ?? "N/A"}. Có thể in bill và chuyển pha chế.";
+                
+                // Reload data để cập nhật trạng thái
+                await LoadMonAsync(cancellationToken);
+                await LoadKhachHangAsync(cancellationToken);
+                await LoadKhuyenMaiAsync(cancellationToken);
+                await LoadThongTinCaDangMoAsync(cancellationToken);
+            }
+            else if (status.PaymentStatus == "PENDING")
+            {
+                SuccessMessage = "⏳ Đang chờ khách thanh toán. Vui lòng kiểm tra lại sau.";
+            }
+            else if (status.PaymentStatus == "EXPIRED")
+            {
+                IsWaitingQrPayment = false;
+                ErrorMessage = "⏰ QR đã hết hạn. Vui lòng tạo lại QR mới.";
+            }
+            else if (status.PaymentStatus == "CANCELLED")
+            {
+                IsWaitingQrPayment = false;
+                ErrorMessage = "❌ QR payment đã bị hủy.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Lỗi kiểm tra trạng thái: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async void ExecuteHuyQrThanhToan()
+    {
+        await HuyQrThanhToanAsync();
+    }
+
+    private async Task HuyQrThanhToanAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsBusy || HoaDonBanIdDaTao <= 0)
+        {
+            return;
+        }
+
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+        IsBusy = true;
+
+        try
+        {
+            var cancelled = await _paymentApiClient.CancelPaymentAsync(HoaDonBanIdDaTao, cancellationToken);
+
+            if (cancelled)
+            {
+                PaymentStatus = "CANCELLED";
+                IsWaitingQrPayment = false;
+                QrCodeUrl = null;
+                CheckoutUrl = null;
+                SuccessMessage = "✅ Đã hủy QR payment.";
+            }
+            else
+            {
+                ErrorMessage = "Không thể hủy QR payment. QR có thể đã hết hạn hoặc đã thanh toán.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Lỗi hủy QR payment: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void ResetQrPaymentState()
+    {
+        HoaDonBanIdDaTao = 0;
+        QrCodeUrl = null;
+        QrCodeImageSource = null;
+        CheckoutUrl = null;
+        PaymentStatus = null;
+        IsWaitingQrPayment = false;
+        QrExpiredAt = null;
+    }
+
+    /// <summary>
+    /// Generate QR code image từ chuỗi qrCodeRaw
+    /// </summary>
+    private BitmapImage? GenerateQrCodeImageSource(string qrCodeRaw)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(qrCodeRaw))
+            {
+                return null;
+            }
+
+            // Tạo QR code bằng QRCoder
+            using var qrGenerator = new QRCodeGenerator();
+            using var qrCodeData = qrGenerator.CreateQrCode(qrCodeRaw, QRCodeGenerator.ECCLevel.Q);
+            using var qrCode = new PngByteQRCode(qrCodeData);
+            
+            // Generate PNG byte array với pixel size 20
+            var qrCodeBytes = qrCode.GetGraphic(20);
+
+            // Convert byte[] thành BitmapImage
+            var bitmapImage = new BitmapImage();
+            using var stream = new MemoryStream(qrCodeBytes);
+            
+            bitmapImage.BeginInit();
+            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+            bitmapImage.StreamSource = stream;
+            bitmapImage.EndInit();
+            bitmapImage.Freeze(); // Freeze để có thể dùng cross-thread
+
+            return bitmapImage;
+        }
+        catch (Exception ex)
+        {
+            // Log error (không có logger trong ViewModel)
+            ErrorMessage = $"Lỗi tạo ảnh QR: {ex.Message}";
+            return null;
+        }
+    }
 }
 
 
