@@ -9,8 +9,12 @@ namespace CoffeeShop.Wpf.ViewModels;
 public sealed class ThongKeViewModel : BaseViewModel
 {
     private readonly IThongKeService _thongKeService;
+    private readonly IExportPrintService _exportPrintService;
+    private readonly SessionService _sessionService;
     private readonly RelayCommand _taiThongKeCommand;
     private readonly RelayCommand _lamMoiCommand;
+    private readonly RelayCommand _xuatPdfCommand;
+    private readonly RelayCommand _xuatExcelCommand;
 
     private DateTime _fromDate = DateTime.Today.AddDays(-7);
     private DateTime _toDate = DateTime.Today;
@@ -24,9 +28,11 @@ public sealed class ThongKeViewModel : BaseViewModel
     private string _successMessage = string.Empty;
     private bool _isBusy;
 
-    public ThongKeViewModel(IThongKeService thongKeService)
+    public ThongKeViewModel(IThongKeService thongKeService, IExportPrintService exportPrintService, SessionService sessionService)
     {
         _thongKeService = thongKeService;
+        _exportPrintService = exportPrintService;
+        _sessionService = sessionService;
 
         DoanhThuTheoNgay = new ObservableCollection<ThongKeDoanhThu>();
         TopSanPhamBanChay = new ObservableCollection<ThongKeTopSanPhamDong>();
@@ -35,6 +41,8 @@ public sealed class ThongKeViewModel : BaseViewModel
 
         _taiThongKeCommand = new RelayCommand(ExecuteTaiThongKe, () => !IsBusy);
         _lamMoiCommand = new RelayCommand(ExecuteLamMoi, () => !IsBusy);
+        _xuatPdfCommand = new RelayCommand(ExecuteXuatPdf, () => !IsBusy);
+        _xuatExcelCommand = new RelayCommand(ExecuteXuatExcel, () => !IsBusy);
     }
 
     public ObservableCollection<ThongKeDoanhThu> DoanhThuTheoNgay { get; }
@@ -103,6 +111,8 @@ public sealed class ThongKeViewModel : BaseViewModel
             {
                 _taiThongKeCommand.RaiseCanExecuteChanged();
                 _lamMoiCommand.RaiseCanExecuteChanged();
+                _xuatPdfCommand.RaiseCanExecuteChanged();
+                _xuatExcelCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -110,6 +120,10 @@ public sealed class ThongKeViewModel : BaseViewModel
     public ICommand TaiThongKeCommand => _taiThongKeCommand;
 
     public ICommand LamMoiCommand => _lamMoiCommand;
+
+    public ICommand XuatPdfCommand => _xuatPdfCommand;
+
+    public ICommand XuatExcelCommand => _xuatExcelCommand;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -160,6 +174,82 @@ public sealed class ThongKeViewModel : BaseViewModel
         ToDate = DateTime.Today;
 
         await TaiThongKeAsync();
+    }
+
+    private async void ExecuteXuatPdf()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        try
+        {
+            var result = await _exportPrintService.XuatPdfBaoCaoDonGianAsync(
+                FromDate,
+                ToDate,
+                null,
+                _sessionService.CurrentUser?.UserId,
+                default);
+
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.Message;
+                return;
+            }
+
+            SuccessMessage = $"Xuất PDF thành công. File: {result.Data}";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể xuất PDF: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async void ExecuteXuatExcel()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        try
+        {
+            var result = await _exportPrintService.XuatCsvThongKeAsync(
+                FromDate,
+                ToDate,
+                null,
+                _sessionService.CurrentUser?.UserId,
+                default);
+
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.Message;
+                return;
+            }
+
+            SuccessMessage = $"Xuất Excel thành công. File: {result.Data}";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể xuất Excel: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private void ApplySummary(ThongKeTongHopModel data)

@@ -14,6 +14,16 @@ public sealed class CanhBaoTonKhoThapDong
 
     public int MucCanhBaoTonKho { get; init; }
 
+    /// <summary>
+    /// Loại: "Món" hoặc "Nguyên liệu"
+    /// </summary>
+    public string LoaiHangHoa { get; init; } = "Món";
+
+    /// <summary>
+    /// Đơn vị tính (cho nguyên liệu: kg, lít, v.v.; cho món: phần/ly)
+    /// </summary>
+    public string DonViTinh { get; init; } = "phần";
+
     public int SoLuongCanBoSung => MucCanhBaoTonKho - TonKho < 0 ? 0 : MucCanhBaoTonKho - TonKho;
 }
 

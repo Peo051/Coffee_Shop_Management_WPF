@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeShop.Wpf", "CoffeeSho
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeShop.PaymentApi", "CoffeeShop.PaymentApi\CoffeeShop.PaymentApi.csproj", "{243F5003-5711-9016-9E3B-F4B2522AC8A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeShop.EFModel", "CoffeeShop.EFModel\CoffeeShop.EFModel.csproj", "{36345105-7473-4BAB-AA6C-6917B97F3C51}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,18 @@ Global
 		{243F5003-5711-9016-9E3B-F4B2522AC8A1}.Release|x64.Build.0 = Release|Any CPU
 		{243F5003-5711-9016-9E3B-F4B2522AC8A1}.Release|x86.ActiveCfg = Release|Any CPU
 		{243F5003-5711-9016-9E3B-F4B2522AC8A1}.Release|x86.Build.0 = Release|Any CPU
+		{36345105-7473-4BAB-AA6C-6917B97F3C51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36345105-7473-4BAB-AA6C-6917B97F3C51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36345105-7473-4BAB-AA6C-6917B97F3C51}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{36345105-7473-4BAB-AA6C-6917B97F3C51}.Debug|x64.Build.0 = Debug|Any CPU
+		{36345105-7473-4BAB-AA6C-6917B97F3C51}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{36345105-7473-4BAB-AA6C-6917B97F3C51}.Debug|x86.Build.0 = Debug|Any CPU
+		{36345105-7473-4BAB-AA6C-6917B97F3C51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36345105-7473-4BAB-AA6C-6917B97F3C51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36345105-7473-4BAB-AA6C-6917B97F3C51}.Release|x64.ActiveCfg = Release|Any CPU
+		{36345105-7473-4BAB-AA6C-6917B97F3C51}.Release|x64.Build.0 = Release|Any CPU
+		{36345105-7473-4BAB-AA6C-6917B97F3C51}.Release|x86.ActiveCfg = Release|Any CPU
+		{36345105-7473-4BAB-AA6C-6917B97F3C51}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,5 +64,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{A30E1DF0-5B02-4333-80CC-E226B7E7C22B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{243F5003-5711-9016-9E3B-F4B2522AC8A1} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CFADF7F9-7DF6-4071-A963-CC816BFE6C83}
 	EndGlobalSection
 EndGlobal

@@ -23,6 +23,7 @@ public sealed class CaLamViecViewModel : BaseViewModel
     private string _tienMatThucDemText = "0";
     private string _ghiChuDoiSoat = string.Empty;
     private CaLamViec? _caDangMo;
+    private CaLamViec? _selectedCaLamViec;
     private CaTongKetModel? _tongKetCa;
     private string _errorMessage = string.Empty;
     private string _successMessage = string.Empty;
@@ -83,6 +84,12 @@ public sealed class CaLamViecViewModel : BaseViewModel
     {
         get => _caDangMo;
         private set => SetProperty(ref _caDangMo, value);
+    }
+
+    public CaLamViec? SelectedCaLamViec
+    {
+        get => _selectedCaLamViec;
+        set => SetProperty(ref _selectedCaLamViec, value);
     }
 
     public CaTongKetModel? TongKetCa
@@ -204,9 +211,10 @@ public sealed class CaLamViecViewModel : BaseViewModel
             return;
         }
 
-        if (CaDangMo is null)
+        var caCanTongKet = SelectedCaLamViec ?? CaDangMo;
+        if (caCanTongKet is null)
         {
-            ErrorMessage = "Hiện không có ca đang mở để tải tổng kết.";
+            ErrorMessage = "Vui lòng chọn một ca trong lịch sử hoặc mở ca hiện tại để tải tổng kết.";
             return;
         }
 
@@ -216,7 +224,7 @@ public sealed class CaLamViecViewModel : BaseViewModel
 
         try
         {
-            var result = await _caLamViecService.GetTongKetCaAsync(CaDangMo.CaLamViecId);
+            var result = await _caLamViecService.GetTongKetCaAsync(caCanTongKet.CaLamViecId);
             if (!result.IsSuccess || result.Data is null)
             {
                 ErrorMessage = result.Message;
@@ -224,9 +232,13 @@ public sealed class CaLamViecViewModel : BaseViewModel
             }
 
             TongKetCa = result.Data;
-            // Gợi ý tiền mặt thực đếm = dự kiến cuối ca
-            TienMatThucDemText = TongKetCa.TienMatDuKienCuoiCa.ToString("0");
-            SuccessMessage = "Đã tải tổng kết ca.";
+            if (CaDangMo?.CaLamViecId == caCanTongKet.CaLamViecId)
+            {
+                // Gợi ý tiền mặt thực đếm = dự kiến cuối ca cho ca đang mở.
+                TienMatThucDemText = TongKetCa.TienMatDuKienCuoiCa.ToString("0");
+            }
+
+            SuccessMessage = $"Đã tải tổng kết ca #{caCanTongKet.CaLamViecId}.";
         }
         catch (Exception ex)
         {
@@ -340,8 +352,9 @@ public sealed class CaLamViecViewModel : BaseViewModel
 
     private async Task TaiLichSuCaCoreAsync(CancellationToken cancellationToken = default)
     {
-        var currentUserId = _sessionService.CurrentUser?.UserId;
-        var result = await _caLamViecService.GetLichSuCaAsync(FromDate, ToDate, currentUserId, cancellationToken);
+        var currentUser = _sessionService.CurrentUser;
+        var nguoiDungId = IsAdmin(currentUser?.Role) ? null : currentUser?.UserId;
+        var result = await _caLamViecService.GetLichSuCaAsync(FromDate, ToDate, nguoiDungId, cancellationToken);
         if (!result.IsSuccess || result.Data is null)
         {
             ErrorMessage = result.Message;
@@ -354,7 +367,20 @@ public sealed class CaLamViecViewModel : BaseViewModel
             LichSuCa.Add(item);
         }
 
-        SuccessMessage = $"Đã tải {LichSuCa.Count} ca làm việc.";
+        if (SelectedCaLamViec is not null
+            && LichSuCa.All(x => x.CaLamViecId != SelectedCaLamViec.CaLamViecId))
+        {
+            SelectedCaLamViec = null;
+        }
+
+        SuccessMessage = IsAdmin(currentUser?.Role)
+            ? $"Đã tải {LichSuCa.Count} ca làm việc của tất cả nhân viên."
+            : $"Đã tải {LichSuCa.Count} ca làm việc.";
+    }
+
+    private static bool IsAdmin(string? role)
+    {
+        return string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool TryParseDecimal(string? text, out decimal result)

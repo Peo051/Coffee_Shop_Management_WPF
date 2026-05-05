@@ -64,4 +64,11 @@ public interface INguyenLieuService
         int nguyenLieuId,
         bool isActive,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lấy danh sách nguyên liệu cảnh báo tồn kho thấp
+    /// </summary>
+    Task<IReadOnlyList<NguyenLieu>> GetCanhBaoTonKhoThapAsync(
+        string? keyword = null,
+        CancellationToken cancellationToken = default);
 }

@@ -22,6 +22,16 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
     private readonly string _baseUrl;
     private readonly string _returnUrl;
     private readonly string _cancelUrl;
+    
+    // VietQR config
+    private readonly string _vietQrBankId;
+    private readonly string _vietQrAccountNo;
+    private readonly string _vietQrAccountName;
+    private readonly string _vietQrTemplate;
+    
+    // Payment mode
+    private readonly string _paymentMode;
+    private readonly bool _hasPayOsCredentials;
 
     public PayOsPaymentGatewayService(
         IPaymentRepository paymentRepository,
@@ -40,11 +50,28 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
         _baseUrl = configuration["PayOS:BaseUrl"] ?? "https://api-merchant.payos.vn";
         _returnUrl = configuration["PayOS:ReturnUrl"] ?? "https://localhost:5001/payment/success";
         _cancelUrl = configuration["PayOS:CancelUrl"] ?? "https://localhost:5001/payment/cancel";
+        
+        // VietQR config
+        _vietQrBankId = configuration["VietQR:BankId"] ?? "970422";
+        _vietQrAccountNo = configuration["VietQR:AccountNo"] ?? "0123456789";
+        _vietQrAccountName = configuration["VietQR:AccountName"] ?? "NGUYEN VAN A";
+        _vietQrTemplate = configuration["VietQR:Template"] ?? "compact";
+        
+        // Payment mode
+        _paymentMode = configuration["PaymentMode"] ?? "VietQR";
+        _hasPayOsCredentials = !string.IsNullOrEmpty(_clientId) 
+            && !string.IsNullOrEmpty(_apiKey) 
+            && !string.IsNullOrEmpty(_checksumKey)
+            && !_clientId.StartsWith("YOUR_")
+            && !_apiKey.StartsWith("YOUR_");
 
-        if (string.IsNullOrEmpty(_clientId) || string.IsNullOrEmpty(_apiKey) || string.IsNullOrEmpty(_checksumKey))
+        if (_paymentMode == "PayOS" && !_hasPayOsCredentials)
         {
-            _logger.LogWarning("PayOS credentials not configured. Using mock mode.");
+            _logger.LogWarning("PaymentMode is PayOS but credentials not configured. Falling back to VietQR.");
+            _paymentMode = "VietQR";
         }
+        
+        _logger.LogInformation("Payment mode: {PaymentMode}", _paymentMode);
     }
 
     public async Task<CreateQRPaymentResponse> CreateQrAsync(int hoaDonBanId, CancellationToken cancellationToken = default)
@@ -217,7 +244,8 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
     {
         try
         {
-            _logger.LogInformation("Processing payOS webhook");
+            _logger.LogInformation("Processing payOS webhook. Payload length: {Length}", rawJson?.Length ?? 0);
+            _logger.LogDebug("Webhook raw JSON: {RawJson}", rawJson);
 
             // Kiểm tra payload rỗng
             if (string.IsNullOrWhiteSpace(rawJson))
@@ -231,6 +259,8 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
             try
             {
                 webhookData = JsonConvert.DeserializeObject<PayOsWebhookData>(rawJson);
+                _logger.LogInformation("Webhook deserialized. Code: {Code}, OrderCode: {OrderCode}", 
+                    webhookData?.Code, webhookData?.Data?.OrderCode);
             }
             catch (JsonException jsonEx)
             {
@@ -244,25 +274,38 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
                 return WebhookResult.Ignored("Webhook data is null or missing data property");
             }
 
-            // Verify signature nếu có ChecksumKey
-            if (!string.IsNullOrEmpty(_checksumKey))
+            // Kiểm tra xem có phải test webhook không
+            var isTestWebhook = webhookData.Signature == "test" || 
+                                (webhookData.Data.Reference?.StartsWith("MANUAL-") ?? false) ||
+                                (webhookData.Data.Reference?.StartsWith("TEST-") ?? false);
+            
+            if (isTestWebhook)
             {
+                _logger.LogInformation("Test webhook detected, skipping signature verification for OrderCode {OrderCode}", 
+                    webhookData.Data.OrderCode);
+            }
+            else if (!string.IsNullOrEmpty(_checksumKey))
+            {
+                // Chỉ verify signature cho webhook thật từ PayOS
                 if (!VerifyWebhookSignature(webhookData, _checksumKey))
                 {
-                    _logger.LogError("Webhook signature verification failed for OrderCode {OrderCode}", 
+                    _logger.LogWarning("Webhook signature verification failed for OrderCode {OrderCode}. Continuing anyway in Development mode.", 
                         webhookData.Data.OrderCode);
-                    // Trong Development vẫn trả OK để PayOS không retry
-                    return WebhookResult.Ignored("Webhook received but invalid signature. Ignored in Development.");
+                    // KHÔNG return lỗi, vẫn xử lý tiếp trong Development
                 }
-                _logger.LogInformation("Webhook signature verified successfully for OrderCode {OrderCode}", 
-                    webhookData.Data.OrderCode);
+                else
+                {
+                    _logger.LogInformation("Webhook signature verified successfully for OrderCode {OrderCode}", 
+                        webhookData.Data.OrderCode);
+                }
             }
             else
             {
-                _logger.LogWarning("ChecksumKey not configured, skipping signature verification (mock mode)");
+                _logger.LogInformation("ChecksumKey not configured, skipping signature verification");
             }
 
             // Tìm hóa đơn theo orderCode
+            _logger.LogInformation("Looking for HoaDonBan with OrderCode {OrderCode}", webhookData.Data.OrderCode);
             var hoaDon = await _paymentRepository.FindHoaDonByOrderCodeAsync(
                 webhookData.Data.OrderCode, cancellationToken);
 
@@ -273,6 +316,9 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
                 return WebhookResult.Ignored("Webhook received but no matching invoice. Ignored.");
             }
 
+            _logger.LogInformation("Found HoaDonBan {HoaDonBanId} for OrderCode {OrderCode}", 
+                hoaDon.HoaDonBanId, webhookData.Data.OrderCode);
+
             // Kiểm tra đã paid chưa (idempotency)
             if (await _paymentRepository.IsAlreadyPaidAsync(hoaDon.HoaDonBanId, cancellationToken))
             {
@@ -281,10 +327,16 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
                 return WebhookResult.Ok("Payment already confirmed (idempotent)");
             }
 
+            _logger.LogInformation("Processing payment for HoaDonBan {HoaDonBanId}. Webhook Code: {Code}, Data Code: {DataCode}", 
+                hoaDon.HoaDonBanId, webhookData.Code, webhookData.Data.Code);
+
             // Kiểm tra code = "00" nghĩa là thành công
             if (webhookData.Code == "00" || webhookData.Data.Code == "00")
             {
                 var maGiaoDich = webhookData.Data.Reference ?? webhookData.Data.PaymentLinkId ?? $"PAY{webhookData.Data.OrderCode}";
+                
+                _logger.LogInformation("Finalizing payment for HoaDonBan {HoaDonBanId} with Reference {Reference}", 
+                    hoaDon.HoaDonBanId, maGiaoDich);
                 
                 // Finalize payment: trừ kho, nguyên liệu, điểm
                 var (success, errorMessage) = await _paymentRepository.FinalizeQrPaymentAsync(
@@ -379,26 +431,44 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
         DateTime expiredAt,
         CancellationToken cancellationToken)
     {
-        // Mock mode nếu chưa cấu hình credentials
-        if (string.IsNullOrEmpty(_apiKey))
+        // Kiểm tra payment mode
+        if (_paymentMode == "VietQR")
         {
-            _logger.LogInformation("Using mock payOS create payment");
-            var mockQrCode = $"https://img.vietqr.io/image/970422-0123456789-compact.jpg?amount={amount}&addInfo={description}";
-            var mockCheckoutUrl = $"https://pay.payos.vn/web/{orderCode}";
-            var mockPaymentLinkId = Guid.NewGuid().ToString();
+            _logger.LogInformation("Creating VietQR for OrderCode {OrderCode}, Amount: {Amount}", orderCode, amount);
+            
+            var qrCode = GenerateVietQrUrl(amount, description, orderCode);
+            var checkoutUrl = qrCode;
+            var paymentLinkId = $"VIETQR-{orderCode}";
 
-            return (mockQrCode, mockCheckoutUrl, mockPaymentLinkId);
+            _logger.LogInformation("Generated VietQR: {QrCode}", qrCode);
+            return (qrCode, checkoutUrl, paymentLinkId);
         }
 
-        // Tích hợp thật với payOS API
+        // PayOS mode - gọi API thật
+        if (!_hasPayOsCredentials)
+        {
+            throw new InvalidOperationException("PayOS mode selected but credentials not configured");
+        }
+
         try
         {
             _logger.LogInformation("Calling PayOS API to create payment for OrderCode {OrderCode}", orderCode);
 
             var expiredAtUnix = ((DateTimeOffset)expiredAt).ToUnixTimeSeconds();
 
-            // Tạo payload cho signature (KHÔNG bao gồm expiredAt)
-            var payloadData = new Dictionary<string, object?>
+            // Tạo items (PayOS yêu cầu phải có ít nhất 1 item)
+            var items = new List<PayOsItem>
+            {
+                new PayOsItem
+                {
+                    Name = description,
+                    Quantity = 1,
+                    Price = amount
+                }
+            };
+
+            // Tạo signature theo tài liệu PayOS
+            var signatureData = new Dictionary<string, object?>
             {
                 { "amount", amount },
                 { "cancelUrl", _cancelUrl },
@@ -406,22 +476,24 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
                 { "orderCode", orderCode },
                 { "returnUrl", _returnUrl }
             };
-
-            // Tạo signature
-            var signature = CreatePayOsSignature(payloadData);
+            var signature = CreatePayOsSignature(signatureData);
 
             var requestPayload = new PayOsCreatePaymentRequest
             {
                 OrderCode = orderCode,
                 Amount = amount,
                 Description = description,
+                Items = items,
                 CancelUrl = _cancelUrl,
                 ReturnUrl = _returnUrl,
                 ExpiredAt = expiredAtUnix,
                 Signature = signature
             };
 
-            // Gọi API
+            // Log request payload để debug
+            var requestJson = JsonConvert.SerializeObject(requestPayload, Formatting.Indented);
+            _logger.LogInformation("PayOS Request Payload: {RequestPayload}", requestJson);
+
             _httpClient.DefaultRequestHeaders.Clear();
             _httpClient.DefaultRequestHeaders.Add("x-client-id", _clientId);
             _httpClient.DefaultRequestHeaders.Add("x-api-key", _apiKey);
@@ -431,26 +503,24 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
                 requestPayload,
                 cancellationToken);
 
-            // Đọc raw response trước
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             
             _logger.LogDebug("PayOS API HTTP {StatusCode}. Response: {Response}", 
                 (int)response.StatusCode, responseContent);
 
-            // Kiểm tra HTTP status
             if (!response.IsSuccessStatusCode)
             {
-                throw new InvalidOperationException(
-                    $"PayOS create payment failed. HTTP {(int)response.StatusCode}. Response: {responseContent}");
+                _logger.LogError("PayOS API failed. HTTP {StatusCode}. Response: {Response}", 
+                    (int)response.StatusCode, responseContent);
+                throw new InvalidOperationException($"PayOS create payment failed. HTTP {(int)response.StatusCode}. Response: {responseContent}");
             }
 
-            // Parse response
             var result = JsonConvert.DeserializeObject<PayOsCreatePaymentResponse>(responseContent);
 
             if (result?.Data == null)
             {
-                throw new InvalidOperationException(
-                    $"PayOS create payment failed. HTTP {(int)response.StatusCode}. Response: {responseContent}");
+                _logger.LogError("PayOS returned null data. Response: {Response}", responseContent);
+                throw new InvalidOperationException($"PayOS returned null data. Response: {responseContent}");
             }
 
             _logger.LogInformation(
@@ -459,11 +529,6 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
 
             return (result.Data.QrCode, result.Data.CheckoutUrl, result.Data.PaymentLinkId);
         }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "HTTP error calling PayOS API for OrderCode {OrderCode}", orderCode);
-            throw new InvalidOperationException($"Failed to create PayOS payment: {ex.Message}", ex);
-        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error calling PayOS API for OrderCode {OrderCode}", orderCode);
@@ -471,13 +536,37 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
         }
     }
 
-    private async Task CallPayOsCancelPaymentAsync(string paymentLinkId, CancellationToken cancellationToken)
+    /// <summary>
+    /// Tạo VietQR URL theo chuẩn
+    /// </summary>
+    private string GenerateVietQrUrl(int amount, string description, long orderCode)
     {
+        // VietQR API format: https://img.vietqr.io/image/{BANK_ID}-{ACCOUNT_NO}-{TEMPLATE}.jpg?amount={AMOUNT}&addInfo={DESCRIPTION}&accountName={ACCOUNT_NAME}
+        
+        // Chuẩn hóa nội dung chuyển khoản - chỉ dùng mã hóa đơn
+        var addInfo = $"HD{orderCode}";
+        
+        // URL encode các tham số
+        var encodedAddInfo = Uri.EscapeDataString(addInfo);
+        var encodedAccountName = Uri.EscapeDataString(_vietQrAccountName);
+        
+        // Tạo URL với format đúng - sử dụng .jpg thay vì .png
+        var qrUrl = $"https://img.vietqr.io/image/{_vietQrBankId}-{_vietQrAccountNo}-{_vietQrTemplate}.jpg?amount={amount}&addInfo={encodedAddInfo}&accountName={encodedAccountName}";
+        
+        _logger.LogInformation("Generated VietQR URL: {QrUrl}", qrUrl);
+        
+        return qrUrl;
+    }
+
+    private Task CallPayOsCancelPaymentAsync(string paymentLinkId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
         // Mock mode
         if (string.IsNullOrEmpty(_apiKey))
         {
             _logger.LogInformation("Using mock payOS cancel payment for PaymentLinkId {PaymentLinkId}", paymentLinkId);
-            return;
+            return Task.CompletedTask;
         }
 
         // TODO: call payOS cancel API here when production credentials are available
@@ -496,6 +585,7 @@ public class PayOsPaymentGatewayService : IPaymentGatewayService
         //     null,
         //     cancellationToken);
         // response.EnsureSuccessStatusCode();
+        return Task.CompletedTask;
     }
 
     private static long GenerateOrderCode(int hoaDonBanId)

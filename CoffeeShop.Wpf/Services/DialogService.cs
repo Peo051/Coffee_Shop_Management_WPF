@@ -5,10 +5,6 @@ namespace CoffeeShop.Wpf.Services;
 
 public sealed class DialogService : IDialogService
 {
-    /// <summary>
-    /// Hiển thị popup xác nhận có ScrollViewer cho nội dung dài.
-    /// Nút Xác nhận / Hủy luôn nhìn thấy, không bị cuộn theo.
-    /// </summary>
     public bool ShowConfirmation(string message, string title)
     {
         // Message ngắn → dùng MessageBox cho nhanh

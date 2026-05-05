@@ -23,9 +23,17 @@ FROM dbo.Mon
 WHERE IsActive = 1;
 
 SELECT COUNT(1) AS SoSanPhamSapHet
-FROM dbo.Mon
-WHERE IsActive = 1
-  AND TonKho <= MucCanhBaoTonKho;
+FROM (
+    SELECT MonId FROM dbo.Mon
+    WHERE IsActive = 1
+      AND TonKho <= ISNULL(MucCanhBaoTonKho, 0)
+      AND ISNULL(MucCanhBaoTonKho, 0) > 0
+    UNION ALL
+    SELECT NguyenLieuId FROM dbo.NguyenLieu
+    WHERE IsActive = 1
+      AND TonKho <= ISNULL(TonKhoToiThieu, 0)
+      AND ISNULL(TonKhoToiThieu, 0) > 0
+) AS Combined;
 
 SELECT
     COUNT(1) AS TongSoSanPham,
@@ -175,18 +183,46 @@ ORDER BY SUM(ct.SoLuong) DESC, SUM(ct.ThanhTien) DESC, m.MonId ASC;";
         CancellationToken cancellationToken = default)
     {
         const string sql = @"
-SELECT TOP (@TopN)
-       m.MonId,
-       m.TenMon,
-       dm.TenDanhMuc,
-       m.TonKho,
-       m.MucCanhBaoTonKho,
-       (m.MucCanhBaoTonKho - m.TonKho) AS SoLuongCanBoSung
-FROM dbo.Mon m
-JOIN dbo.DanhMuc dm ON dm.DanhMucId = m.DanhMucId
-WHERE m.IsActive = 1
-  AND m.TonKho <= m.MucCanhBaoTonKho
-ORDER BY (m.MucCanhBaoTonKho - m.TonKho) DESC, m.MonId ASC;";
+-- Gộp cả Món và Nguyên liệu sắp hết
+WITH CombinedLowStock AS (
+    -- Món sắp hết
+    SELECT TOP (@TopN)
+           m.MonId,
+           m.TenMon,
+           m.DanhMucId,
+           dm.TenDanhMuc,
+           m.TonKho,
+           ISNULL(m.MucCanhBaoTonKho, 0) AS MucCanhBaoTonKho,
+           N'Món' AS LoaiHangHoa,
+           N'phần' AS DonViTinh,
+           (ISNULL(m.MucCanhBaoTonKho, 0) - m.TonKho) AS SoLuongCanBoSung
+    FROM dbo.Mon m
+    JOIN dbo.DanhMuc dm ON dm.DanhMucId = m.DanhMucId
+    WHERE m.IsActive = 1
+      AND m.TonKho <= ISNULL(m.MucCanhBaoTonKho, 0)
+      AND ISNULL(m.MucCanhBaoTonKho, 0) > 0
+    
+    UNION ALL
+    
+    -- Nguyên liệu sắp hết
+    SELECT TOP (@TopN)
+           nl.NguyenLieuId AS MonId,
+           nl.TenNguyenLieu AS TenMon,
+           0 AS DanhMucId,
+           N'Nguyên liệu' AS TenDanhMuc,
+           CAST(nl.TonKho AS INT) AS TonKho,
+           CAST(ISNULL(nl.TonKhoToiThieu, 0) AS INT) AS MucCanhBaoTonKho,
+           N'Nguyên liệu' AS LoaiHangHoa,
+           nl.DonViTinh,
+           CAST((ISNULL(nl.TonKhoToiThieu, 0) - nl.TonKho) AS INT) AS SoLuongCanBoSung
+    FROM dbo.NguyenLieu nl
+    WHERE nl.IsActive = 1
+      AND nl.TonKho <= ISNULL(nl.TonKhoToiThieu, 0)
+      AND ISNULL(nl.TonKhoToiThieu, 0) > 0
+)
+SELECT TOP (@TopN) *
+FROM CombinedLowStock
+ORDER BY SoLuongCanBoSung DESC, TonKho ASC, MonId ASC;";
 
         var result = new List<CanhBaoTonKhoThapDong>();
 
@@ -203,9 +239,12 @@ ORDER BY (m.MucCanhBaoTonKho - m.TonKho) DESC, m.MonId ASC;";
             {
                 MonId = reader.GetInt32(reader.GetOrdinal("MonId")),
                 TenMon = reader.GetString(reader.GetOrdinal("TenMon")),
+                DanhMucId = reader.GetInt32(reader.GetOrdinal("DanhMucId")),
                 TenDanhMuc = reader.GetString(reader.GetOrdinal("TenDanhMuc")),
                 TonKho = reader.GetInt32(reader.GetOrdinal("TonKho")),
-                MucCanhBaoTonKho = reader.GetInt32(reader.GetOrdinal("MucCanhBaoTonKho"))
+                MucCanhBaoTonKho = reader.GetInt32(reader.GetOrdinal("MucCanhBaoTonKho")),
+                LoaiHangHoa = reader.GetString(reader.GetOrdinal("LoaiHangHoa")),
+                DonViTinh = reader.GetString(reader.GetOrdinal("DonViTinh"))
             });
         }
 

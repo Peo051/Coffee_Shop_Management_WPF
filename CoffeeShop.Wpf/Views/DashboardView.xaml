@@ -8,18 +8,18 @@
              d:DesignWidth="1200">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Auto"
-                  >
-        <Grid>
+                  HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="0,0,0,12">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="12" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="12" />
-                <RowDefinition Height="300" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
+            <!-- Header Dashboard -->
             <Border Style="{StaticResource CardPanel}" Padding="18">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -48,18 +48,9 @@
                 </Grid>
             </Border>
 
-            <Grid Grid.Row="2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="12" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="12" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="12" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <Border Grid.Column="0" Style="{StaticResource CardPanelMuted}">
+            <!-- 4 Card thống kê - Responsive với UniformGrid -->
+            <UniformGrid Grid.Row="2" Columns="4" Rows="1">
+                <Border Style="{StaticResource CardPanelMuted}" Margin="0,0,6,0">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CaptionText}" Text="Doanh thu hôm nay" />
                         <TextBlock Margin="0,6,0,0"
@@ -69,7 +60,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="2" Style="{StaticResource CardPanelMuted}">
+                <Border Style="{StaticResource CardPanelMuted}" Margin="6,0,6,0">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CaptionText}" Text="Số hóa đơn hôm nay" />
                         <TextBlock Margin="0,6,0,0"
@@ -79,7 +70,18 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="6" Style="{StaticResource CardPanelMuted}">
+                <Border Style="{StaticResource CardPanelMuted}" Margin="6,0,6,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CaptionText}" Text="Món sắp hết hàng" />
+                        <TextBlock Margin="0,6,0,0"
+                                   FontSize="24"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource DangerBrush}"
+                                   Text="{Binding SoSanPhamSapHet}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource CardPanelMuted}" Margin="6,0,0,0">
                     <StackPanel>
                         <TextBlock Style="{StaticResource CaptionText}" Text="Sản phẩm đang kinh doanh" />
                         <TextBlock Margin="0,6,0,0"
@@ -91,29 +93,18 @@
                                    Text="{Binding TyLeSanPhamDangKinhDoanh, StringFormat=Tỷ lệ hoạt động: {0:N2}%}" />
                     </StackPanel>
                 </Border>
+            </UniformGrid>
 
-                <Border Grid.Column="4" Style="{StaticResource CardPanelMuted}">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource CaptionText}" Text="Món sắp hết hàng" />
-                        <TextBlock Margin="0,6,0,0"
-                                   FontSize="24"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource DangerBrush}"
-                                   Text="{Binding SoSanPhamSapHet}" />
-                    </StackPanel>
-                </Border>
-            </Grid>
-
+            <!-- 3 Card bảng - Layout 2 hàng để hiển thị đầy đủ -->
             <Grid Grid.Row="4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="500" />
-                    <ColumnDefinition Width="12" />
-                    <ColumnDefinition Width="400" />
-                    <ColumnDefinition Width="12" />
-                    <ColumnDefinition Width="400" />
-                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" MinHeight="300" />
+                    <RowDefinition Height="12" />
+                    <RowDefinition Height="Auto" MinHeight="300" />
+                </Grid.RowDefinitions>
 
-                <Border Grid.Column="0" Style="{StaticResource CardPanel}">
+                <!-- Hàng 1: Doanh thu 7 ngày (giới hạn width để không bị giãn quá) -->
+                <Border Grid.Row="0" Style="{StaticResource CardPanel}" MinHeight="300" MaxWidth="900" HorizontalAlignment="Left">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -130,95 +121,261 @@
 
                         <DataGrid Grid.Row="2"
                                   ItemsSource="{Binding DoanhThu7Ngay}"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  IsReadOnly="True"
+                                  RowHeight="40"
+                                  ColumnHeaderHeight="44">
+                            <DataGrid.CellStyle>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="Padding" Value="10,0" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.CellStyle>
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Ngày"
                                                     Binding="{Binding Ngay, StringFormat=dd/MM/yyyy}"
-                                                    Width="*" />
+                                                    Width="180">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 
                                 <DataGridTextColumn Header="Số HĐ"
                                                     Binding="{Binding SoHoaDon}"
-                                                    ElementStyle="{StaticResource RightAlignedCellText}"
-                                                    Width="*" />
+                                                    Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 
                                 <DataGridTextColumn Header="Doanh thu thuần"
                                                     Binding="{Binding DoanhThuThuan, StringFormat={}{0:N0} đ}"
-                                                    ElementStyle="{StaticResource RightAlignedCellText}"
-                                                    Width="*" />
+                                                    Width="*"
+                                                    MinWidth="180">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
                 </Border>
 
-                <Border Grid.Column="2" Style="{StaticResource CardPanel}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="8" />
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                <!-- Hàng 2: Top bán chạy + Tồn kho thấp -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="1.15*" />
+                    </Grid.ColumnDefinitions>
 
-                        <TextBlock Style="{StaticResource CardTitleText}" Text="Top bán chạy hôm nay" />
+                    <!-- Top bán chạy -->
+                    <Border Grid.Column="0" Style="{StaticResource CardPanel}" MinHeight="300">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                        <DataGrid Grid.Row="2" ItemsSource="{Binding TopSanPhamHomNay}"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Mã" Binding="{Binding MonId}" Width="72" />
-                                <DataGridTextColumn Header="Tên sản phẩm" Binding="{Binding TenMon}" Width="*" />
-                                <DataGridTextColumn Header="SL bán"
-                                                    Binding="{Binding TongSoLuongBan}"
-                                                    ElementStyle="{StaticResource RightAlignedCellText}"
-                                                    Width="86" />
-                            </DataGrid.Columns>
-                        </DataGrid>
+                            <TextBlock Style="{StaticResource CardTitleText}" Text="Top bán chạy hôm nay" />
 
-                        <Button Grid.Row="3"
-                                Content="Mở chi tiết top sản phẩm"
-                                Style="{StaticResource ButtonSecondary}"
-                                Command="{Binding MoTopSanPhamCommand}" />
-                    </Grid>
-                </Border>
+                            <DataGrid Grid.Row="2" 
+                                      ItemsSource="{Binding TopSanPhamHomNay}"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      IsReadOnly="True"
+                                      RowHeight="40"
+                                      ColumnHeaderHeight="44">
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="DataGridCell">
+                                        <Setter Property="Padding" Value="10,0" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.CellStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Mã" 
+                                                        Binding="{Binding MonId}" 
+                                                        Width="70">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                                <Setter Property="Margin" Value="8,0" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Tên sản phẩm" 
+                                                        Binding="{Binding TenMon}" 
+                                                        Width="*"
+                                                        MinWidth="150">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                                <Setter Property="ToolTip" Value="{Binding TenMon}" />
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                                <Setter Property="Margin" Value="8,0" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="SL bán"
+                                                        Binding="{Binding TongSoLuongBan}"
+                                                        Width="80">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                                <Setter Property="Margin" Value="8,0" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
 
-                <Border Grid.Column="4" Style="{StaticResource CardPanel}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="8" />
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                            <Button Grid.Row="3"
+                                    Margin="0,12,0,0"
+                                    Height="44"
+                                    HorizontalAlignment="Stretch"
+                                    Content="Mở chi tiết top sản phẩm"
+                                    Style="{StaticResource ButtonSecondary}"
+                                    Command="{Binding MoTopSanPhamCommand}" />
+                        </Grid>
+                    </Border>
 
-                        <TextBlock Style="{StaticResource CardTitleText}" Text="Tồn kho thấp" />
+                    <!-- Tồn kho thấp - Rộng hơn để hiển thị đủ 5 cột với padding -->
+                    <Border Grid.Column="2" Style="{StaticResource CardPanel}" MinHeight="300">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                        <DataGrid Grid.Row="2" ItemsSource="{Binding DanhSachTonKhoThap}"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                  >
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Mã" Binding="{Binding MonId}" Width="72" />
-                                <DataGridTextColumn Header="Tên sản phẩm" Binding="{Binding TenMon}" Width="*" />
-                                <DataGridTextColumn Header="Tồn"
-                                                    Binding="{Binding TonKho}"
-                                                    ElementStyle="{StaticResource RightAlignedCellText}"
-                                                    Width="70" />
-                                <DataGridTextColumn Header="Ngưỡng"
-                                                    Binding="{Binding MucCanhBaoTonKho}"
-                                                    ElementStyle="{StaticResource RightAlignedCellText}"
-                                                    Width="80" />
-                            </DataGrid.Columns>
-                        </DataGrid>
+                            <TextBlock Style="{StaticResource CardTitleText}" Text="Tồn kho thấp" />
 
-                        <Button Grid.Row="3"
-                                Content="Mở cảnh báo tồn kho"
-                                Style="{StaticResource ButtonWarning}"
-                                Command="{Binding MoTonKhoThapCommand}" />
-                    </Grid>
-                </Border>
+                            <DataGrid Grid.Row="2" 
+                                      ItemsSource="{Binding DanhSachTonKhoThap}"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      IsReadOnly="True"
+                                      RowHeight="40"
+                                      ColumnHeaderHeight="44">
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="DataGridCell">
+                                        <Setter Property="Padding" Value="10,0" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.CellStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Loại" 
+                                                        Binding="{Binding LoaiHangHoa}" 
+                                                        Width="100">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                                <Setter Property="Margin" Value="8,0" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Tên" 
+                                                        Binding="{Binding TenMon}" 
+                                                        Width="*"
+                                                        MinWidth="140">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                                <Setter Property="ToolTip" Value="{Binding TenMon}" />
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                                <Setter Property="Margin" Value="8,0" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Tồn"
+                                                        Binding="{Binding TonKho}"
+                                                        Width="70">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                                <Setter Property="Margin" Value="8,0,12,0" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="ĐVT"
+                                                        Binding="{Binding DonViTinh}"
+                                                        Width="70">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                                <Setter Property="Margin" Value="8,0" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Ngưỡng"
+                                                        Binding="{Binding MucCanhBaoTonKho}"
+                                                        Width="75">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                                <Setter Property="Margin" Value="8,0" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <Button Grid.Row="3"
+                                    Margin="0,12,0,0"
+                                    Height="44"
+                                    HorizontalAlignment="Stretch"
+                                    Content="Xem cảnh báo tồn kho"
+                                    Style="{StaticResource ButtonWarning}"
+                                    Command="{Binding MoTonKhoThapCommand}" />
+                        </Grid>
+                    </Border>
+                </Grid>
             </Grid>
 
+            <!-- Messages -->
             <StackPanel Grid.Row="5" Margin="0,10,0,0">
                 <TextBlock Foreground="{DynamicResource DangerBrush}" Text="{Binding ErrorMessage}" />
                 <TextBlock Foreground="{DynamicResource SuccessBrush}" Text="{Binding SuccessMessage}" />

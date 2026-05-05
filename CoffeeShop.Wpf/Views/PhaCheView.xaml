@@ -4,100 +4,417 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="700"
-             d:DesignWidth="1100">
+             d:DesignHeight="720"
+             d:DesignWidth="1200">
 
     <Grid>
         <Grid.RowDefinitions>
+            <!-- Header -->
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <!-- Thanh điều khiển -->
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <!-- Main content: DataGrid + Card đơn đang chọn -->
             <RowDefinition Height="*" />
+            <RowDefinition Height="8" />
+            <!-- Thông báo -->
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Grid.Row="0">
-            <TextBlock Style="{StaticResource CardTitleText}" Text="☕ Quầy pha chế" />
-            <TextBlock Margin="0,4,0,0"
-                       Style="{StaticResource CaptionText}"
-                       Text="Theo dõi đơn đã thanh toán và cập nhật trạng thái pha chế." />
-        </StackPanel>
-
-        <!-- Nút hành động -->
-        <WrapPanel Grid.Row="1" Margin="0,10,0,0" Orientation="Horizontal">
-            <Button Content="🔄 Làm mới"
-                    Margin="0,0,8,0"
-                    Style="{StaticResource ButtonSecondary}"
-                    Command="{Binding LamMoiCommand}" />
-            <Button Content="🔥 Bắt đầu pha chế"
-                    Margin="0,0,8,0"
-                    Style="{StaticResource ButtonPrimary}"
-                    Command="{Binding BatDauPhaCheCommand}" />
-            <Button Content="✅ Hoàn thành"
-                    Margin="0,0,8,0"
-                    Style="{StaticResource ButtonPrimary}"
-                    Command="{Binding HoanThanhCommand}" />
-            <Button Content="🤝 Đã giao khách"
-                    Style="{StaticResource ButtonPrimary}"
-                    Command="{Binding GiaoKhachCommand}" />
-        </WrapPanel>
-
-        <!-- DataGrid -->
-        <Border Grid.Row="2"
-                Margin="0,10,0,0"
-                Style="{StaticResource CardPanel}">
-            <DataGrid ItemsSource="{Binding DonPhaChe}"
-                      SelectedItem="{Binding SelectedDon, Mode=TwoWay}"
-                      AutoGenerateColumns="False"
-                      IsReadOnly="True"
-                      SelectionMode="Single"
-                      CanUserAddRows="False"
-                      CanUserDeleteRows="False"
-                      HeadersVisibility="Column"
-                      GridLinesVisibility="Horizontal"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Auto">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Số gọi món"
-                                        Binding="{Binding SoGoiMonHienThi}"
-                                        Width="80" />
-                    <DataGridTextColumn Header="Mã HĐ"
-                                        Binding="{Binding MaHoaDonHienThi}"
-                                        Width="85" />
-                    <DataGridTextColumn Header="Thời gian order"
-                                        Binding="{Binding NgayBan, StringFormat={}{0:HH:mm dd/MM}}"
-                                        Width="120" />
-                    <DataGridTextColumn Header="Khách hàng"
-                                        Binding="{Binding TenKhachHang}"
-                                        Width="120" />
-                    <DataGridTextColumn Header="Bàn/Vị trí"
-                                        Binding="{Binding ViTriHienThi}"
-                                        Width="120" />
-                    <DataGridTextColumn Header="Danh sách món"
-                                        Binding="{Binding DanhSachMonTomTat}"
-                                        Width="*" />
-                    <DataGridTextColumn Header="Tổng tiền"
-                                        Binding="{Binding ThanhToan, StringFormat={}{0:N0} đ}"
-                                        Width="100" />
-                    <DataGridTextColumn Header="Trạng thái pha chế"
-                                        Binding="{Binding TrangThaiPhaCheHienThi}"
-                                        Width="130" />
-                    <DataGridTextColumn Header="Bắt đầu pha"
-                                        Binding="{Binding ThoiGianBatDauPhaChe, StringFormat={}{0:HH:mm:ss}}"
-                                        Width="90" />
-                    <DataGridTextColumn Header="Hoàn thành"
-                                        Binding="{Binding ThoiGianHoanThanhPhaChe, StringFormat={}{0:HH:mm:ss}}"
-                                        Width="90" />
-                </DataGrid.Columns>
-            </DataGrid>
+        <!-- ========================================== -->
+        <!-- HEADER -->
+        <!-- ========================================== -->
+        <Border Grid.Row="0" Style="{StaticResource CardPanel}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource SectionHeader}" Text="☕ Quầy pha chế" />
+                <TextBlock Margin="0,6,0,0"
+                           FontSize="12"
+                           Foreground="{DynamicResource MutedTextBrush}"
+                           Text="Theo dõi đơn đã thanh toán và cập nhật trạng thái pha chế." />
+            </StackPanel>
         </Border>
 
-        <!-- Thông báo -->
-        <StackPanel Grid.Row="3" Margin="0,8,0,0">
+        <!-- ========================================== -->
+        <!-- THANH ĐIỀU KHIỂN -->
+        <!-- ========================================== -->
+        <Border Grid.Row="2" Style="{StaticResource CardPanel}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Nút Làm mới (thao tác chung) -->
+                <Button Grid.Column="0"
+                        Width="110"
+                        Content="🔄 Làm mới"
+                        Style="{StaticResource ButtonSecondary}"
+                        Command="{Binding LamMoiCommand}" />
+
+                <!-- Nhóm nút thao tác với đơn đang chọn -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center"
+                               Margin="0,0,12,0"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource MutedTextBrush}"
+                               Text="Thao tác với đơn đang chọn:" />
+                    <Button Width="140"
+                            Margin="0,0,8,0"
+                            Content="🔥 Bắt đầu pha chế"
+                            Style="{StaticResource ButtonPrimary}"
+                            Command="{Binding BatDauPhaCheCommand}" />
+                    <Button Width="110"
+                            Margin="0,0,8,0"
+                            Content="✅ Hoàn thành"
+                            Style="{StaticResource ButtonPrimary}"
+                            Command="{Binding HoanThanhCommand}" />
+                    <Button Width="120"
+                            Margin="0,0,8,0"
+                            Content="🤝 Đã giao khách"
+                            Style="{StaticResource ButtonSecondary}"
+                            Command="{Binding GiaoKhachCommand}" />
+                    <Button Width="120"
+                            Content="🍹 In lại phiếu"
+                            Style="{StaticResource ButtonSecondary}"
+                            Command="{Binding InPhieuPhaCheCommand}"
+                            ToolTip="In lại phiếu pha chế cho đơn đã chọn" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ========================================== -->
+        <!-- MAIN CONTENT: DATAGRID + CARD ĐƠN ĐANG CHỌN -->
+        <!-- ========================================== -->
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="320" />
+            </Grid.ColumnDefinitions>
+
+            <!-- DataGrid danh sách đơn pha chế -->
+            <Border Grid.Column="0" Style="{StaticResource CardPanel}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="8" />
+                        <RowDefinition Height="450" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Text="Danh sách đơn pha chế" />
+
+                    <DataGrid Grid.Row="2"
+                              ItemsSource="{Binding DonPhaChe}"
+                              SelectedItem="{Binding SelectedDon, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              CanUserReorderColumns="False"
+                              CanUserResizeRows="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              RowHeight="44"
+                              EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <!-- Số gọi món: 90 -->
+                            <DataGridTextColumn Header="Số gọi món" Binding="{Binding SoGoiMonHienThi}" Width="90" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="FontWeight" Value="Bold" />
+                                        <Setter Property="FontSize" Value="14" />
+                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Mã HĐ: 80 -->
+                            <DataGridTextColumn Header="Mã HĐ" Binding="{Binding MaHoaDonHienThi}" Width="80" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="FontSize" Value="11" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Thời gian: 120 -->
+                            <DataGridTextColumn Header="Thời gian" Binding="{Binding NgayBan, StringFormat={}{0:HH:mm dd/MM}}" Width="120" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Danh sách món: 2* (quan trọng nhất) -->
+                            <DataGridTextColumn Header="Danh sách món" Binding="{Binding DanhSachMonTomTat}" Width="2*" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                        <Setter Property="ToolTip" Value="{Binding DanhSachMonTomTat}" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Trạng thái: 130 (badge màu) -->
+                            <DataGridTemplateColumn Header="Trạng thái" Width="130">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="4"
+                                                Padding="8,4"
+                                                HorizontalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#FFF3E0" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding TrangThaiPhaCheHienThi}" Value="Đang pha">
+                                                            <Setter Property="Background" Value="#E3F2FD" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding TrangThaiPhaCheHienThi}" Value="Hoàn thành">
+                                                            <Setter Property="Background" Value="#E8F5E9" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding TrangThaiPhaCheHienThi}" Value="Đã giao">
+                                                            <Setter Property="Background" Value="#F5F5F5" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock FontWeight="SemiBold"
+                                                       FontSize="12"
+                                                       TextAlignment="Center"
+                                                       Text="{Binding TrangThaiPhaCheHienThi}">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#FF9800" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding TrangThaiPhaCheHienThi}" Value="Đang pha">
+                                                                <Setter Property="Foreground" Value="#1976D2" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding TrangThaiPhaCheHienThi}" Value="Hoàn thành">
+                                                                <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding TrangThaiPhaCheHienThi}" Value="Đã giao">
+                                                                <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Bắt đầu: 90 -->
+                            <DataGridTextColumn Header="Bắt đầu" Binding="{Binding ThoiGianBatDauPhaChe, StringFormat={}{0:HH:mm:ss}}" Width="90" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="FontSize" Value="11" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Hoàn thành: 90 -->
+                            <DataGridTextColumn Header="Hoàn thành" Binding="{Binding ThoiGianHoanThanhPhaChe, StringFormat={}{0:HH:mm:ss}}" Width="90" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="FontSize" Value="11" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <!-- Card đơn đang chọn -->
+            <Border Grid.Column="2" Style="{StaticResource CardPanel}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <TextBlock FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Text="Đơn đang chọn" />
+
+                        <!-- Empty state khi chưa chọn đơn -->
+                        <StackPanel Margin="0,12,0,0">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedDon}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <Border Padding="12"
+                                    Background="{DynamicResource InfoBackgroundBrush}"
+                                    BorderBrush="{DynamicResource InfoBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                <TextBlock FontStyle="Italic"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Text="Chọn một đơn trong danh sách để thao tác." />
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Thông tin đơn đã chọn -->
+                        <StackPanel>
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedDon}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+
+                            <!-- Số gọi món -->
+                            <Border Margin="0,12,0,0"
+                                    Padding="12,8"
+                                    Background="{DynamicResource PrimaryBrush}"
+                                    CornerRadius="6">
+                                <StackPanel>
+                                    <TextBlock FontSize="11"
+                                               Foreground="White"
+                                               Text="SỐ GỌI MÓN" />
+                                    <TextBlock Margin="0,4,0,0"
+                                               FontSize="28"
+                                               FontWeight="Bold"
+                                               Foreground="White"
+                                               Text="{Binding SelectedDon.SoGoiMonHienThi}" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Thông tin chi tiết -->
+                            <StackPanel Margin="0,12,0,0">
+                                <TextBlock FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Text="MÃ HÓA ĐƠN" />
+                                <TextBlock Margin="0,4,0,0"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding SelectedDon.MaHoaDonHienThi}" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Text="KHÁCH HÀNG" />
+                                <TextBlock Margin="0,4,0,0"
+                                           FontSize="13"
+                                           Text="{Binding SelectedDon.TenKhachHang}" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Text="TRẠNG THÁI PHA CHẾ" />
+                                <Border Margin="0,4,0,0"
+                                        Padding="10,6"
+                                        CornerRadius="4"
+                                        HorizontalAlignment="Left">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#FFF3E0" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedDon.TrangThaiPhaCheHienThi}" Value="Đang pha">
+                                                    <Setter Property="Background" Value="#E3F2FD" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SelectedDon.TrangThaiPhaCheHienThi}" Value="Hoàn thành">
+                                                    <Setter Property="Background" Value="#E8F5E9" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SelectedDon.TrangThaiPhaCheHienThi}" Value="Đã giao">
+                                                    <Setter Property="Background" Value="#F5F5F5" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock FontWeight="Bold"
+                                               FontSize="13"
+                                               Text="{Binding SelectedDon.TrangThaiPhaCheHienThi}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#FF9800" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedDon.TrangThaiPhaCheHienThi}" Value="Đang pha">
+                                                        <Setter Property="Foreground" Value="#1976D2" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedDon.TrangThaiPhaCheHienThi}" Value="Hoàn thành">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedDon.TrangThaiPhaCheHienThi}" Value="Đã giao">
+                                                        <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Text="DANH SÁCH MÓN" />
+                                <TextBlock Margin="0,4,0,0"
+                                           FontSize="12"
+                                           TextWrapping="Wrap"
+                                           Text="{Binding SelectedDon.DanhSachMonTomTat}" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Text="THỜI GIAN ORDER" />
+                                <TextBlock Margin="0,4,0,0"
+                                           FontSize="12"
+                                           Text="{Binding SelectedDon.NgayBan, StringFormat={}{0:HH:mm:ss dd/MM/yyyy}}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- ========================================== -->
+        <!-- THÔNG BÁO -->
+        <!-- ========================================== -->
+        <StackPanel Grid.Row="6">
             <TextBlock Foreground="{DynamicResource DangerBrush}"
                        TextWrapping="Wrap"
                        Text="{Binding ErrorMessage}" />
-            <TextBlock Foreground="{DynamicResource SuccessBrush}"
+            <TextBlock Margin="0,4,0,0"
+                       Foreground="{DynamicResource SuccessBrush}"
                        TextWrapping="Wrap"
                        Text="{Binding SuccessMessage}" />
         </StackPanel>

@@ -25,9 +25,7 @@
         <DataTemplate DataType="{x:Type viewModels:AuditLogViewModel}">
             <views:AuditLogView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type viewModels:ExportPrintViewModel}">
-            <views:ExportPrintView />
-        </DataTemplate>
+        <!-- ExportPrintViewModel removed - functionality moved to individual report pages -->
         <DataTemplate DataType="{x:Type viewModels:KhuyenMaiViewModel}">
             <views:KhuyenMaiView />
         </DataTemplate>
@@ -64,9 +62,7 @@
         <DataTemplate DataType="{x:Type viewModels:CanhBaoTonKhoViewModel}">
             <views:CanhBaoTonKhoView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type viewModels:TimKiemSanPhamViewModel}">
-            <views:TimKiemSanPhamView />
-        </DataTemplate>
+        <!-- TimKiemSanPhamViewModel removed - search functionality integrated into product pages -->
         <DataTemplate DataType="{x:Type viewModels:HoaDonNhapViewModel}">
             <views:HoaDonNhapView />
         </DataTemplate>

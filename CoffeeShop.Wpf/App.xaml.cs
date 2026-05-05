@@ -56,7 +56,7 @@ public partial class App : Application
 
         var exportPrintRepository = new ExportPrintRepository();
         var exportPrintService = new ExportPrintService(exportPrintRepository, auditLogService, cauHinhHeThongService);
-        var exportPrintViewModel = new ExportPrintViewModel(exportPrintService, sessionService);
+        // ExportPrintViewModel removed - functionality moved to individual report pages
 
         var danhMucRepository = new DanhMucRepository();
         var danhMucService = new DanhMucService(danhMucRepository);
@@ -83,7 +83,7 @@ public partial class App : Application
         var khoRepository = new KhoRepository();
         var khoService = new KhoService(khoRepository, auditLogService, sessionService);
         var trangThaiSanPhamViewModel = new TrangThaiSanPhamViewModel(khoService, danhMucService);
-        var canhBaoTonKhoViewModel = new CanhBaoTonKhoViewModel(khoService, danhMucService);
+        var canhBaoTonKhoViewModel = new CanhBaoTonKhoViewModel(khoService, danhMucService, nguyenLieuService);
         var timKiemSanPhamViewModel = new TimKiemSanPhamViewModel(monService, danhMucService);
 
         var hoaDonNhapRepository = new HoaDonNhapRepository(lichSuTonKhoRepository);
@@ -122,27 +122,28 @@ public partial class App : Application
             caLamViecService,
             khachHangService,
             khuyenMaiService,
-            sessionService);
+            sessionService,
+            exportPrintService);
 
         var thongKeRepository = new ThongKeRepository();
         var thongKeService = new ThongKeService(thongKeRepository, hoaDonBanRepository);
-        var thongKeViewModel = new ThongKeViewModel(thongKeService);
+        var thongKeViewModel = new ThongKeViewModel(thongKeService, exportPrintService, sessionService);
         var topSanPhamService = new TopSanPhamService(thongKeRepository);
-        var topSanPhamBanChayViewModel = new TopSanPhamBanChayViewModel(topSanPhamService);
+        var topSanPhamBanChayViewModel = new TopSanPhamBanChayViewModel(topSanPhamService, exportPrintService, sessionService);
 
         var baoCaoRepository = new BaoCaoRepository();
         var baoCaoService = new BaoCaoService(baoCaoRepository);
-        var baoCaoViewModel = new BaoCaoViewModel(baoCaoService);
+        var baoCaoViewModel = new BaoCaoViewModel(baoCaoService, exportPrintService, sessionService);
 
         var phaCheRepository = new PhaCheRepository();
         var phaCheService = new PhaCheService(phaCheRepository);
-        var phaCheViewModel = new PhaCheViewModel(phaCheService);
+        var phaCheViewModel = new PhaCheViewModel(phaCheService, exportPrintService, sessionService);
 
         var mainShellViewModel = new MainShellViewModel(
             permissionService,
             dashboardViewModel,
             auditLogViewModel,
-            exportPrintViewModel,
+            // ExportPrintViewModel removed - functionality moved to individual pages
             khuyenMaiViewModel,
             khachHangViewModel,
             doiMatKhauViewModel,
@@ -155,7 +156,7 @@ public partial class App : Application
             congThucMonViewModel,
             trangThaiSanPhamViewModel,
             canhBaoTonKhoViewModel,
-            timKiemSanPhamViewModel,
+            // TimKiemSanPhamViewModel removed - search functionality integrated into product pages
             hoaDonNhapViewModel,
             // Module Quản lý bàn đã bị gỡ
             // quanLyBanViewModel,

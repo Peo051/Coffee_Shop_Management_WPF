@@ -3,20 +3,30 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:CoffeeShop.Wpf.Converters"
              mc:Ignorable="d"
              d:DesignHeight="860"
              d:DesignWidth="1480">
     <UserControl.Resources>
-        <CollectionViewSource x:Key="GroupedMenuItems" Source="{Binding MenuItems}">
-            <CollectionViewSource.GroupDescriptions>
-                <PropertyGroupDescription PropertyName="GroupName" />
-            </CollectionViewSource.GroupDescriptions>
-        </CollectionViewSource>
+        <!-- Converter: Bool to Expand Icon -->
+        <local:BoolToExpandIconConverter x:Key="BoolToExpandIconConverter" />
+        
+        <!-- Converter: Bool to Visibility -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        
+        <!-- Converter: Inverse Bool to Visibility -->
+        <local:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+        
+        <!-- Converter: Bool to Active Background -->
+        <local:BoolToActiveBackgroundConverter x:Key="BoolToActiveBackgroundConverter" />
+        
+        <!-- Converter: Bool to Active Text Color -->
+        <local:BoolToActiveTextConverter x:Key="BoolToActiveTextConverter" />
     </UserControl.Resources>
 
     <Grid Margin="14">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280" />
+            <ColumnDefinition Width="{Binding SidebarWidth}" />
             <ColumnDefinition Width="14" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
@@ -37,22 +47,102 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel>
-                    <TextBlock Text="GIBOR COFFEE"
-                               FontSize="24"
-                               FontWeight="SemiBold"
-                               Foreground="White" />
-                    <TextBlock Margin="0,4,0,0"
-                               Style="{StaticResource PageSubtitleText}"
-                               Foreground="{DynamicResource SidebarMutedTextBrush}"
-                               Text="Hệ thống quản lý quán cà phê" />
+                    <!-- Toggle Button -->
+                    <Button HorizontalAlignment="Left"
+                            Width="36"
+                            Height="36"
+                            Margin="0,0,0,8"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Command="{Binding ToggleSidebarCommand}"
+                            Cursor="Hand"
+                            ToolTip="Thu gọn / Mở rộng sidebar">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderThickness="0"
+                                                    CornerRadius="8"
+                                                    Padding="8">
+                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                  VerticalAlignment="Center" />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#18FFFFFF" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <TextBlock Text="☰"
+                                   FontSize="20"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Button>
+
+                    <!-- Logo Expanded -->
+                    <StackPanel Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                                HorizontalAlignment="Left">
+                        <!-- Logo Image Circular -->
+                        <Border Width="56"
+                                Height="56"
+                                CornerRadius="28"
+                                Margin="0,0,0,12"
+                                BorderBrush="#4DFFFFFF"
+                                BorderThickness="2">
+                            <Border.Clip>
+                                <EllipseGeometry Center="28,28" RadiusX="28" RadiusY="28" />
+                            </Border.Clip>
+                            <Border.Background>
+                                <ImageBrush ImageSource="pack://application:,,,/Resources/Images/logo.jpg"
+                                            Stretch="UniformToFill" />
+                            </Border.Background>
+                        </Border>
+                        
+                        <TextBlock Text="GIBOR COFFEE"
+                                   FontSize="24"
+                                   FontWeight="SemiBold"
+                                   Foreground="White" />
+                        <TextBlock Margin="0,4,0,0"
+                                   Style="{StaticResource PageSubtitleText}"
+                                   Foreground="{DynamicResource SidebarMutedTextBrush}"
+                                   Text="Hệ thống quản lý quán cà phê" />
+                    </StackPanel>
+
+                    <!-- Logo Collapsed - Circular Image -->
+                    <Border Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Width="44"
+                            Height="44"
+                            CornerRadius="22"
+                            HorizontalAlignment="Center"
+                            BorderBrush="#4DFFFFFF"
+                            BorderThickness="2"
+                            ToolTip="GIBOR COFFEE">
+                        <Border.Clip>
+                            <EllipseGeometry Center="22,22" RadiusX="22" RadiusY="22" />
+                        </Border.Clip>
+                        <Border.Background>
+                            <ImageBrush ImageSource="pack://application:,,,/Resources/Images/logo.jpg"
+                                        Stretch="UniformToFill" />
+                        </Border.Background>
+                    </Border>
                 </StackPanel>
 
+                <!-- Session Info - Expanded -->
                 <Border Grid.Row="2"
                         Background="#24FFFFFF"
                         BorderBrush="#36FFFFFF"
                         BorderThickness="1"
                         CornerRadius="12"
-                        Padding="12">
+                        Padding="12"
+                        Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -78,6 +168,49 @@
                     </Grid>
                 </Border>
 
+                <!-- Session Info - Collapsed (chỉ nút logout nhỏ) -->
+                <Button Grid.Row="2"
+                        Width="48"
+                        Height="48"
+                        Background="#24FFFFFF"
+                        BorderBrush="#36FFFFFF"
+                        BorderThickness="1"
+                        HorizontalAlignment="Center"
+                        Command="{Binding DangXuatCommand}"
+                        Cursor="Hand"
+                        ToolTip="Đăng xuất"
+                        Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#24FFFFFF" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="12"
+                                                Padding="12">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#36FFFFFF" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <TextBlock Text="👤"
+                               FontSize="20"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                </Button>
+
                 <Grid Grid.Row="4">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -85,34 +218,204 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
+                    <!-- Menu Title - chỉ hiện khi expanded -->
                     <TextBlock Text="Menu chức năng"
                                FontWeight="SemiBold"
-                               Foreground="{DynamicResource SidebarMutedTextBrush}" />
+                               Foreground="{DynamicResource SidebarMutedTextBrush}"
+                               Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
 
-                    <ListBox Grid.Row="2"
-                             Style="{StaticResource SidebarListBox}"
-                             ItemsSource="{Binding Source={StaticResource GroupedMenuItems}}"
-                             SelectedItem="{Binding SelectedMenuItem, Mode=TwoWay}"
-                             ItemContainerStyle="{StaticResource SidebarMenuItemStyle}"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             VirtualizingStackPanel.IsVirtualizing="True"
-                             VirtualizingStackPanel.VirtualizationMode="Recycling">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding DisplayName}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Foreground}" />
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                        <ListBox.GroupStyle>
-                            <GroupStyle>
-                                <GroupStyle.HeaderTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Style="{StaticResource SidebarGroupHeaderText}" Text="{Binding Name}" />
-                                    </DataTemplate>
-                                </GroupStyle.HeaderTemplate>
-                            </GroupStyle>
-                        </ListBox.GroupStyle>
-                    </ListBox>
+                    <!-- Accordion Menu - Expanded Mode -->
+                    <ScrollViewer Grid.Row="2"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                        <ItemsControl ItemsSource="{Binding MenuGroups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,0,0,2">
+                                        <!-- Group Header - Clickable -->
+                                        <Button Background="Transparent"
+                                                BorderThickness="0"
+                                                Padding="16,0,12,0"
+                                                Height="42"
+                                                HorizontalContentAlignment="Stretch"
+                                                Cursor="Hand"
+                                                Click="MenuGroupHeader_Click">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="Transparent" />
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}"
+                                                                        BorderThickness="0"
+                                                                        CornerRadius="8"
+                                                                        Padding="{TemplateBinding Padding}">
+                                                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                                      VerticalAlignment="Center" />
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#18FFFFFF" />
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="8" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Expand/Collapse Icon -->
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding IsExpanded, Converter={StaticResource BoolToExpandIconConverter}}"
+                                                           FontSize="13"
+                                                           Foreground="{DynamicResource SidebarMutedTextBrush}"
+                                                           VerticalAlignment="Center" />
+
+                                                <!-- Group Title -->
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding Title}"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="15"
+                                                           Foreground="White"
+                                                           VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Button>
+
+                                        <!-- Menu Items - Collapsible -->
+                                        <ItemsControl ItemsSource="{Binding Items}"
+                                                      Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                      Margin="0,2,0,0">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Background="{Binding IsActive, Converter={StaticResource BoolToActiveBackgroundConverter}}"
+                                                            BorderThickness="0"
+                                                            Padding="36,0,12,0"
+                                                            Height="40"
+                                                            Margin="8,2,10,2"
+                                                            HorizontalContentAlignment="Left"
+                                                            Cursor="Hand"
+                                                            Click="MenuItem_Click">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button">
+                                                                <Setter Property="Background" Value="Transparent" />
+                                                                <Setter Property="Template">
+                                                                    <Setter.Value>
+                                                                        <ControlTemplate TargetType="Button">
+                                                                            <Border Background="{TemplateBinding Background}"
+                                                                                    BorderThickness="0"
+                                                                                    CornerRadius="8"
+                                                                                    Padding="{TemplateBinding Padding}">
+                                                                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                                                  VerticalAlignment="Center" />
+                                                                            </Border>
+                                                                        </ControlTemplate>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                                <Style.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Background" Value="#14FFFFFF" />
+                                                                    </Trigger>
+                                                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                                        <Setter Property="Background" Value="#28FFFFFF" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="4" />
+                                                                <ColumnDefinition Width="8" />
+                                                                <ColumnDefinition Width="*" />
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <!-- Active Indicator -->
+                                                            <Border Grid.Column="0"
+                                                                    Background="#F5DEB3"
+                                                                    CornerRadius="2"
+                                                                    Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                                                            <!-- Menu Item Text -->
+                                                            <TextBlock Grid.Column="2"
+                                                                       Text="{Binding DisplayName}"
+                                                                       FontSize="14"
+                                                                       Foreground="{Binding IsActive, Converter={StaticResource BoolToActiveTextConverter}}"
+                                                                       TextWrapping="Wrap" />
+                                                        </Grid>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Icon Menu - Collapsed Mode -->
+                    <ScrollViewer Grid.Row="2"
+                                  VerticalScrollBarVisibility="Hidden"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ItemsControl ItemsSource="{Binding MenuGroups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Width="56"
+                                            Height="56"
+                                            Margin="0,4,0,4"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            HorizontalAlignment="Center"
+                                            Cursor="Hand"
+                                            ToolTip="{Binding Tooltip}"
+                                            Click="MenuGroupHeader_Click">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    BorderThickness="0"
+                                                                    CornerRadius="12"
+                                                                    Padding="12">
+                                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                                  VerticalAlignment="Center" />
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#28FFFFFF" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                        <TextBlock Text="{Binding Icon}"
+                                                   FontSize="28"
+                                                   Foreground="#F5F5DC"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center">
+                                            <TextBlock.Effect>
+                                                <DropShadowEffect Color="Black"
+                                                                  Direction="270"
+                                                                  ShadowDepth="1"
+                                                                  BlurRadius="2"
+                                                                  Opacity="0.3" />
+                                            </TextBlock.Effect>
+                                        </TextBlock>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </Grid>
             </Grid>
         </Border>

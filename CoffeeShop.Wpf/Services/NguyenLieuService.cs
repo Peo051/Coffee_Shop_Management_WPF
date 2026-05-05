@@ -164,6 +164,21 @@ public sealed class NguyenLieuService : INguyenLieuService
         }
     }
 
+    public async Task<IReadOnlyList<NguyenLieu>> GetCanhBaoTonKhoThapAsync(
+        string? keyword = null,
+        CancellationToken cancellationToken = default)
+    {
+        var allNguyenLieu = await _nguyenLieuRepository.SearchAsync(keyword, activeOnly: true, cancellationToken);
+        
+        // Lọc nguyên liệu có TonKho <= TonKhoToiThieu và TonKhoToiThieu > 0
+        return allNguyenLieu
+            .Where(nl => nl.TonKhoToiThieu > 0 && nl.TonKho <= nl.TonKhoToiThieu)
+            .OrderByDescending(nl => nl.TonKhoToiThieu - nl.TonKho)
+            .ThenBy(nl => nl.TonKho)
+            .ThenBy(nl => nl.NguyenLieuId)
+            .ToList();
+    }
+
     private static ServiceResult ValidateNguyenLieu(
         string tenNguyenLieu,
         string donViTinh,

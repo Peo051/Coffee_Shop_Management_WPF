@@ -19,6 +19,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
     private readonly IKhachHangService _khachHangService;
     private readonly IKhuyenMaiService _khuyenMaiService;
     private readonly SessionService _sessionService;
+    private readonly IExportPrintService _exportPrintService;
 
     private readonly RelayCommand _themDongCommand;
     private readonly RelayCommand _xoaDongCommand;
@@ -30,6 +31,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
     private readonly RelayCommand<MonHienThiViewModel> _themMonNhanhCommand;
     private readonly RelayCommand<KhachHang> _chonKhachHangCommand;
     private readonly RelayCommand _xoaKhachHangCommand;
+    private readonly RelayCommand _inPhieuPhaCheCommand;
 
     private string _tuKhoaTimMon = string.Empty;
     private string _selectedDanhMuc = "Tất cả";
@@ -79,7 +81,8 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         ICaLamViecService caLamViecService,
         IKhachHangService khachHangService,
         IKhuyenMaiService khuyenMaiService,
-        SessionService sessionService)
+        SessionService sessionService,
+        IExportPrintService exportPrintService)
     {
         _hoaDonBanService = hoaDonBanService;
         _monService = monService;
@@ -87,6 +90,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         _khachHangService = khachHangService;
         _khuyenMaiService = khuyenMaiService;
         _sessionService = sessionService;
+        _exportPrintService = exportPrintService;
 
         Mons = new ObservableCollection<Mon>();
         MonsHienThi = new ObservableCollection<MonHienThiViewModel>();
@@ -105,6 +109,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         _themMonNhanhCommand = new RelayCommand<MonHienThiViewModel>(ExecuteThemMonNhanh);
         _chonKhachHangCommand = new RelayCommand<KhachHang>(ExecuteChonKhachHang);
         _xoaKhachHangCommand = new RelayCommand(ExecuteXoaKhachHang);
+        _inPhieuPhaCheCommand = new RelayCommand(ExecuteInPhieuPhaChe, () => !IsBusy && HoaDonBanIdDaTao > 0);
 
         InitializeQrPaymentCommands();
     }
@@ -494,6 +499,8 @@ public sealed class HoaDonBanViewModel : BaseViewModel
     
     public ICommand XoaKhachHangCommand => _xoaKhachHangCommand;
 
+    public ICommand InPhieuPhaCheCommand => _inPhieuPhaCheCommand;
+
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
         if (IsBusy)
@@ -796,6 +803,10 @@ public sealed class HoaDonBanViewModel : BaseViewModel
 
             // Lưu ID hóa đơn
             HoaDonBanIdDaTao = hoaDon?.HoaDonBanId ?? 0;
+            
+            // Refresh commands để enable nút xác nhận
+            System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+            System.Diagnostics.Debug.WriteLine($"[TaoHoaDon] HoaDonBanIdDaTao set to {HoaDonBanIdDaTao}");
 
             if (isQrPayment)
             {
@@ -1021,7 +1032,6 @@ public sealed class HoaDonBanViewModel : BaseViewModel
 
         ApplyMonFilter();
     }
-
 
     private async Task LoadKhachHangAsync(CancellationToken cancellationToken)
     {
@@ -1346,12 +1356,51 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         _ => 0m
     };
 
+    private async void ExecuteInPhieuPhaChe()
+    {
+        if (IsBusy || HoaDonBanIdDaTao <= 0)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        try
+        {
+            var currentUserId = _sessionService.CurrentUser?.UserId;
+            var result = await _exportPrintService.InPhieuPhaCheAsync(
+                HoaDonBanIdDaTao,
+                null,
+                currentUserId);
+
+            if (result.IsSuccess)
+            {
+                SuccessMessage = result.Message;
+            }
+            else
+            {
+                ErrorMessage = result.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Lỗi in phiếu pha chế: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     // ==================== QR PAYMENT ====================
 
     private readonly PaymentApiClient _paymentApiClient = new();
     private RelayCommand? _taoQrThanhToanCommand;
     private RelayCommand? _kiemTraTrangThaiThanhToanCommand;
     private RelayCommand? _huyQrThanhToanCommand;
+    private RelayCommand? _xacNhanThanhToanCommand;
 
     private int _hoaDonBanIdDaTao;
     private string? _qrCodeUrl;
@@ -1365,7 +1414,13 @@ public sealed class HoaDonBanViewModel : BaseViewModel
     public int HoaDonBanIdDaTao
     {
         get => _hoaDonBanIdDaTao;
-        private set => SetProperty(ref _hoaDonBanIdDaTao, value);
+        private set
+        {
+            if (SetProperty(ref _hoaDonBanIdDaTao, value))
+            {
+                _inPhieuPhaCheCommand.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     /// <summary>URL QR code để hiển thị</summary>
@@ -1440,12 +1495,14 @@ public sealed class HoaDonBanViewModel : BaseViewModel
     public ICommand TaoQrThanhToanCommand => _taoQrThanhToanCommand ?? throw new InvalidOperationException("Command not initialized");
     public ICommand KiemTraTrangThaiThanhToanCommand => _kiemTraTrangThaiThanhToanCommand ?? throw new InvalidOperationException("Command not initialized");
     public ICommand HuyQrThanhToanCommand => _huyQrThanhToanCommand ?? throw new InvalidOperationException("Command not initialized");
+    public ICommand XacNhanThanhToanCommand => _xacNhanThanhToanCommand ?? throw new InvalidOperationException("Command not initialized");
 
     private void InitializeQrPaymentCommands()
     {
         _taoQrThanhToanCommand = new RelayCommand(ExecuteTaoQrThanhToan, CanExecuteTaoQrThanhToan);
         _kiemTraTrangThaiThanhToanCommand = new RelayCommand(ExecuteKiemTraTrangThaiThanhToan, CanExecuteKiemTraTrangThaiThanhToan);
         _huyQrThanhToanCommand = new RelayCommand(ExecuteHuyQrThanhToan, CanExecuteHuyQrThanhToan);
+        _xacNhanThanhToanCommand = new RelayCommand(ExecuteXacNhanThanhToan, CanExecuteXacNhanThanhToan);
     }
 
     private bool CanExecuteTaoQrThanhToan()
@@ -1511,6 +1568,9 @@ public sealed class HoaDonBanViewModel : BaseViewModel
                 QrCodeImageSource = GenerateQrCodeImageSource(response.QRCodeRaw);
             }
 
+            // Refresh commands để enable nút xác nhận
+            System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+
             // QR payment created successfully
 
             // Chỉ set success message nếu không phải auto-call
@@ -1572,6 +1632,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             if (status.PaymentStatus == "PAID")
             {
                 IsWaitingQrPayment = false;
+                System.Windows.Input.CommandManager.InvalidateRequerySuggested();
                 SuccessMessage = $"🎉 Thanh toán thành công! Mã giao dịch: {status.MaGiaoDich ?? "N/A"}. Có thể in bill và chuyển pha chế.";
                 
                 // Reload data để cập nhật trạng thái
@@ -1587,11 +1648,13 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             else if (status.PaymentStatus == "EXPIRED")
             {
                 IsWaitingQrPayment = false;
+                System.Windows.Input.CommandManager.InvalidateRequerySuggested();
                 ErrorMessage = "⏰ QR đã hết hạn. Vui lòng tạo lại QR mới.";
             }
             else if (status.PaymentStatus == "CANCELLED")
             {
                 IsWaitingQrPayment = false;
+                System.Windows.Input.CommandManager.InvalidateRequerySuggested();
                 ErrorMessage = "❌ QR payment đã bị hủy.";
             }
         }
@@ -1629,6 +1692,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             {
                 PaymentStatus = "CANCELLED";
                 IsWaitingQrPayment = false;
+                System.Windows.Input.CommandManager.InvalidateRequerySuggested();
                 QrCodeUrl = null;
                 CheckoutUrl = null;
                 SuccessMessage = "✅ Đã hủy QR payment.";
@@ -1641,6 +1705,71 @@ public sealed class HoaDonBanViewModel : BaseViewModel
         catch (Exception ex)
         {
             ErrorMessage = $"Lỗi hủy QR payment: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    // ===== XÁC NHẬN THANH TOÁN (TEST) =====
+
+    private bool CanExecuteXacNhanThanhToan()
+    {
+        // Cho phép xác nhận khi có hóa đơn đã tạo (bỏ hết điều kiện khác)
+        var canExecute = HoaDonBanIdDaTao > 0;
+        
+        // Debug logging
+        System.Diagnostics.Debug.WriteLine($"[XacNhanThanhToan] CanExecute={canExecute}, HoaDonBanIdDaTao={HoaDonBanIdDaTao}, IsBusy={IsBusy}");
+        
+        return canExecute;
+    }
+
+    private async void ExecuteXacNhanThanhToan()
+    {
+        await XacNhanThanhToanAsync();
+    }
+
+    private async Task XacNhanThanhToanAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsBusy || HoaDonBanIdDaTao <= 0)
+        {
+            return;
+        }
+
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+        IsBusy = true;
+
+        try
+        {
+            // Gọi API để xác nhận thanh toán thủ công (simulate webhook)
+            var testWebhookUrl = $"{_paymentApiClient.BaseUrl}/api/payments/test/confirm/{HoaDonBanIdDaTao}";
+            
+            using var httpClient = new System.Net.Http.HttpClient(new System.Net.Http.HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            });
+
+            var response = await httpClient.PostAsync(testWebhookUrl, null, cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                SuccessMessage = "✅ Đã xác nhận thanh toán thành công! Hóa đơn đang được xử lý...";
+                
+                // Tự động kiểm tra trạng thái sau 1 giây
+                await Task.Delay(1000, cancellationToken);
+                await KiemTraTrangThaiThanhToanAsync(cancellationToken);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync(cancellationToken);
+                ErrorMessage = $"❌ Lỗi xác nhận thanh toán: {error}";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"❌ Lỗi xác nhận thanh toán: {ex.Message}";
         }
         finally
         {
@@ -1671,7 +1800,22 @@ public sealed class HoaDonBanViewModel : BaseViewModel
                 return null;
             }
 
-            // Tạo QR code bằng QRCoder
+            // Kiểm tra nếu là URL (VietQR hoặc PayOS trả về URL ảnh)
+            if (qrCodeRaw.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                qrCodeRaw.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                // Load ảnh từ URL
+                var bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.UriSource = new Uri(qrCodeRaw, UriKind.Absolute);
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.EndInit();
+                bitmapImage.Freeze();
+                
+                return bitmapImage;
+            }
+
+            // Nếu không phải URL, tạo QR code bằng QRCoder (cho text thuần)
             using var qrGenerator = new QRCodeGenerator();
             using var qrCodeData = qrGenerator.CreateQrCode(qrCodeRaw, QRCodeGenerator.ECCLevel.Q);
             using var qrCode = new PngByteQRCode(qrCodeData);
@@ -1680,16 +1824,16 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             var qrCodeBytes = qrCode.GetGraphic(20);
 
             // Convert byte[] thành BitmapImage
-            var bitmapImage = new BitmapImage();
+            var bitmapImage2 = new BitmapImage();
             using var stream = new MemoryStream(qrCodeBytes);
             
-            bitmapImage.BeginInit();
-            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-            bitmapImage.StreamSource = stream;
-            bitmapImage.EndInit();
-            bitmapImage.Freeze(); // Freeze để có thể dùng cross-thread
+            bitmapImage2.BeginInit();
+            bitmapImage2.CacheOption = BitmapCacheOption.OnLoad;
+            bitmapImage2.StreamSource = stream;
+            bitmapImage2.EndInit();
+            bitmapImage2.Freeze(); // Freeze để có thể dùng cross-thread
 
-            return bitmapImage;
+            return bitmapImage2;
         }
         catch (Exception ex)
         {

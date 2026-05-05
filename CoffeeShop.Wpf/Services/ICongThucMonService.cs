@@ -27,6 +27,8 @@ public interface ICongThucMonService
         int nguyenLieuId,
         decimal dinhLuong,
         string? ghiChu = null,
+        string? cacBuocThucHien = null,
+        decimal tyLeHaoHut = 0,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -36,6 +38,8 @@ public interface ICongThucMonService
         int congThucMonId,
         decimal dinhLuong,
         string? ghiChu = null,
+        string? cacBuocThucHien = null,
+        decimal tyLeHaoHut = 0,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -43,5 +47,12 @@ public interface ICongThucMonService
     /// </summary>
     Task<ServiceResult> DeleteAsync(
         int congThucMonId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lấy lịch sử cập nhật công thức theo món
+    /// </summary>
+    Task<IReadOnlyList<LichSuCapNhatCongThuc>> GetLichSuCapNhatAsync(
+        int monId,
         CancellationToken cancellationToken = default);
 }

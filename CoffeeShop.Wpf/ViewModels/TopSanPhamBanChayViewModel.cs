@@ -9,8 +9,12 @@ namespace CoffeeShop.Wpf.ViewModels;
 public sealed class TopSanPhamBanChayViewModel : BaseViewModel
 {
     private readonly ITopSanPhamService _topSanPhamService;
+    private readonly IExportPrintService _exportPrintService;
+    private readonly SessionService _sessionService;
     private readonly RelayCommand _taiTopCommand;
     private readonly RelayCommand _lamMoiCommand;
+    private readonly RelayCommand _xuatPdfCommand;
+    private readonly RelayCommand _xuatExcelCommand;
 
     private DateTime _fromDate = DateTime.Today.AddDays(-7);
     private DateTime _toDate = DateTime.Today;
@@ -19,14 +23,18 @@ public sealed class TopSanPhamBanChayViewModel : BaseViewModel
     private string _successMessage = string.Empty;
     private bool _isBusy;
 
-    public TopSanPhamBanChayViewModel(ITopSanPhamService topSanPhamService)
+    public TopSanPhamBanChayViewModel(ITopSanPhamService topSanPhamService, IExportPrintService exportPrintService, SessionService sessionService)
     {
         _topSanPhamService = topSanPhamService;
+        _exportPrintService = exportPrintService;
+        _sessionService = sessionService;
 
         TopSanPhamBanChay = new ObservableCollection<ThongKeTopSanPhamDong>();
 
         _taiTopCommand = new RelayCommand(ExecuteTaiTop, () => !IsBusy);
         _lamMoiCommand = new RelayCommand(ExecuteLamMoi, () => !IsBusy);
+        _xuatPdfCommand = new RelayCommand(ExecuteXuatPdf, () => !IsBusy);
+        _xuatExcelCommand = new RelayCommand(ExecuteXuatExcel, () => !IsBusy);
     }
 
     public ObservableCollection<ThongKeTopSanPhamDong> TopSanPhamBanChay { get; }
@@ -70,6 +78,8 @@ public sealed class TopSanPhamBanChayViewModel : BaseViewModel
             {
                 _taiTopCommand.RaiseCanExecuteChanged();
                 _lamMoiCommand.RaiseCanExecuteChanged();
+                _xuatPdfCommand.RaiseCanExecuteChanged();
+                _xuatExcelCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -77,6 +87,10 @@ public sealed class TopSanPhamBanChayViewModel : BaseViewModel
     public ICommand TaiTopCommand => _taiTopCommand;
 
     public ICommand LamMoiCommand => _lamMoiCommand;
+
+    public ICommand XuatPdfCommand => _xuatPdfCommand;
+
+    public ICommand XuatExcelCommand => _xuatExcelCommand;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -141,6 +155,82 @@ public sealed class TopSanPhamBanChayViewModel : BaseViewModel
         catch (Exception ex)
         {
             ErrorMessage = $"Không thể tải top sản phẩm bán chạy: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async void ExecuteXuatPdf()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        try
+        {
+            var result = await _exportPrintService.XuatPdfBaoCaoNangCaoAsync(
+                FromDate,
+                ToDate,
+                null,
+                _sessionService.CurrentUser?.UserId,
+                default);
+
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.Message;
+                return;
+            }
+
+            SuccessMessage = $"Xuất PDF thành công. File: {result.Data}";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể xuất PDF: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async void ExecuteXuatExcel()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        try
+        {
+            var result = await _exportPrintService.XuatCsvThongKeAsync(
+                FromDate,
+                ToDate,
+                null,
+                _sessionService.CurrentUser?.UserId,
+                default);
+
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.Message;
+                return;
+            }
+
+            SuccessMessage = $"Xuất Excel thành công. File: {result.Data}";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể xuất Excel: {ex.Message}";
         }
         finally
         {

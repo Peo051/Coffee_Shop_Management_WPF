@@ -1,4 +1,4 @@
-﻿<Application x:Class="CoffeeShop.Wpf.App"
+<Application x:Class="CoffeeShop.Wpf.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="clr-namespace:CoffeeShop.Wpf.Converters"
@@ -13,6 +13,7 @@
             <converters:IntToBoolConverter x:Key="IntToBoolConverter" />
             <converters:NullToBooleanConverter x:Key="NullToBooleanConverter" />
             <converters:StringNullOrEmptyToBooleanConverter x:Key="StringNullOrEmptyToBooleanConverter" />
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

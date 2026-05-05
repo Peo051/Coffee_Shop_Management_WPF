@@ -12,7 +12,7 @@ public sealed class MainShellViewModel : BaseViewModel
     private readonly DanhMucViewModel _danhMucViewModel;
     private readonly DashboardViewModel _dashboardViewModel;
     private readonly AuditLogViewModel _auditLogViewModel;
-    private readonly ExportPrintViewModel _exportPrintViewModel;
+    // ExportPrintViewModel removed - functionality moved to individual pages
     private readonly KhuyenMaiViewModel _khuyenMaiViewModel;
     private readonly KhachHangViewModel _khachHangViewModel;
     private readonly DoiMatKhauViewModel _doiMatKhauViewModel;
@@ -24,7 +24,7 @@ public sealed class MainShellViewModel : BaseViewModel
     private readonly CongThucMonViewModel _congThucMonViewModel;
     private readonly TrangThaiSanPhamViewModel _trangThaiSanPhamViewModel;
     private readonly CanhBaoTonKhoViewModel _canhBaoTonKhoViewModel;
-    private readonly TimKiemSanPhamViewModel _timKiemSanPhamViewModel;
+    // TimKiemSanPhamViewModel removed - search functionality integrated into product pages
     private readonly HoaDonNhapViewModel _hoaDonNhapViewModel;
     // Module Quản lý bàn đã bị gỡ - không còn sử dụng
     // private readonly QuanLyBanViewModel _quanLyBanViewModel;
@@ -36,6 +36,7 @@ public sealed class MainShellViewModel : BaseViewModel
     private readonly BaoCaoViewModel _baoCaoViewModel;
     private readonly PhaCheViewModel _phaCheViewModel;
     private readonly RelayCommand _dangXuatCommand;
+    private readonly RelayCommand _toggleSidebarCommand;
 
     private SessionService? _sessionService;
     private INavigationService? _navigationService;
@@ -47,12 +48,14 @@ public sealed class MainShellViewModel : BaseViewModel
     private string _currentModuleDescription = "Theo dõi nhanh hiệu suất vận hành và thao tác theo quyền.";
     private MenuItemModel? _selectedMenuItem;
     private object? _currentContentViewModel;
+    private bool _isSidebarCollapsed;
+    private double _sidebarWidth = 280;
 
     public MainShellViewModel(
         PermissionService permissionService,
         DashboardViewModel dashboardViewModel,
         AuditLogViewModel auditLogViewModel,
-        ExportPrintViewModel exportPrintViewModel,
+        // ExportPrintViewModel removed - functionality moved to individual pages
         KhuyenMaiViewModel khuyenMaiViewModel,
         KhachHangViewModel khachHangViewModel,
         DoiMatKhauViewModel doiMatKhauViewModel,
@@ -65,7 +68,7 @@ public sealed class MainShellViewModel : BaseViewModel
         CongThucMonViewModel congThucMonViewModel,
         TrangThaiSanPhamViewModel trangThaiSanPhamViewModel,
         CanhBaoTonKhoViewModel canhBaoTonKhoViewModel,
-        TimKiemSanPhamViewModel timKiemSanPhamViewModel,
+        // TimKiemSanPhamViewModel removed - search functionality integrated into product pages
         HoaDonNhapViewModel hoaDonNhapViewModel,
         // Module Quản lý bàn đã bị gỡ
         // QuanLyBanViewModel quanLyBanViewModel,
@@ -80,7 +83,7 @@ public sealed class MainShellViewModel : BaseViewModel
         _permissionService = permissionService;
         _dashboardViewModel = dashboardViewModel;
         _auditLogViewModel = auditLogViewModel;
-        _exportPrintViewModel = exportPrintViewModel;
+        // _exportPrintViewModel removed
         _khuyenMaiViewModel = khuyenMaiViewModel;
         _khachHangViewModel = khachHangViewModel;
         _doiMatKhauViewModel = doiMatKhauViewModel;
@@ -93,7 +96,7 @@ public sealed class MainShellViewModel : BaseViewModel
         _congThucMonViewModel = congThucMonViewModel;
         _trangThaiSanPhamViewModel = trangThaiSanPhamViewModel;
         _canhBaoTonKhoViewModel = canhBaoTonKhoViewModel;
-        _timKiemSanPhamViewModel = timKiemSanPhamViewModel;
+        // _timKiemSanPhamViewModel removed
         _hoaDonNhapViewModel = hoaDonNhapViewModel;
         // Module Quản lý bàn đã bị gỡ
         // _quanLyBanViewModel = quanLyBanViewModel;
@@ -105,11 +108,16 @@ public sealed class MainShellViewModel : BaseViewModel
         _baoCaoViewModel = baoCaoViewModel;
         _phaCheViewModel = phaCheViewModel;
         _dangXuatCommand = new RelayCommand(ExecuteDangXuat, CanExecuteDangXuat);
+        _toggleSidebarCommand = new RelayCommand(ExecuteToggleSidebar);
 
         MenuItems = new ObservableCollection<MenuItemModel>();
+        MenuGroups = new ObservableCollection<MenuGroupModel>();
     }
 
     public ObservableCollection<MenuItemModel> MenuItems { get; }
+
+    /// <summary>Danh sách nhóm menu cho accordion sidebar</summary>
+    public ObservableCollection<MenuGroupModel> MenuGroups { get; }
 
     public string WelcomeText
     {
@@ -122,8 +130,23 @@ public sealed class MainShellViewModel : BaseViewModel
         get => _selectedMenuItem;
         set
         {
+            // Bỏ active của item cũ
+            if (_selectedMenuItem != null)
+            {
+                _selectedMenuItem.IsActive = false;
+            }
+
             if (SetProperty(ref _selectedMenuItem, value) && value is not null)
             {
+                // Set active cho item mới
+                value.IsActive = true;
+
+                // Mở nhóm chứa item được chọn và đóng các nhóm khác
+                foreach (var group in MenuGroups)
+                {
+                    group.IsExpanded = group.Items.Contains(value);
+                }
+
                 NavigateMenu(value);
             }
         }
@@ -147,7 +170,29 @@ public sealed class MainShellViewModel : BaseViewModel
         private set => SetProperty(ref _currentModuleDescription, value);
     }
 
+    /// <summary>Trạng thái sidebar: true = collapsed (thu gọn), false = expanded (mở rộng)</summary>
+    public bool IsSidebarCollapsed
+    {
+        get => _isSidebarCollapsed;
+        set
+        {
+            if (SetProperty(ref _isSidebarCollapsed, value))
+            {
+                SidebarWidth = value ? 72 : 280;
+            }
+        }
+    }
+
+    /// <summary>Chiều rộng sidebar: 280px (expanded) hoặc 72px (collapsed)</summary>
+    public double SidebarWidth
+    {
+        get => _sidebarWidth;
+        private set => SetProperty(ref _sidebarWidth, value);
+    }
+
     public ICommand DangXuatCommand => _dangXuatCommand;
+
+    public ICommand ToggleSidebarCommand => _toggleSidebarCommand;
 
     public void ConfigureSessionControl(
         SessionService sessionService,
@@ -166,22 +211,88 @@ public sealed class MainShellViewModel : BaseViewModel
         _currentUserRole = userSession.Role;
 
         MenuItems.Clear();
-        foreach (var item in _permissionService.GetMenuByRole(userSession.Role))
+        MenuGroups.Clear();
+
+        var menuItems = _permissionService.GetMenuByRole(userSession.Role);
+        
+        // Nhóm menu items theo GroupName
+        var groupedItems = menuItems.GroupBy(m => m.GroupName).OrderBy(g => GetGroupOrder(g.Key));
+
+        foreach (var group in groupedItems)
         {
-            MenuItems.Add(item);
+            var icon = GetGroupIcon(group.Key);
+            var menuGroup = new MenuGroupModel(group.Key, icon);
+            
+            foreach (var item in group)
+            {
+                MenuItems.Add(item);
+                menuGroup.Items.Add(item);
+            }
+
+            MenuGroups.Add(menuGroup);
         }
 
-        // Ưu tiên hiển thị màn hình 'Ca làm việc' cho ThuNgân nếu đã đăng nhập
-        // Nếu có Service kiểm tra ca, có thể direct thẳng sang 'HoaDonBan' nếu đã có ca
-        var defaultSelectedItem = MenuItems.FirstOrDefault(m => m.Code == "CaLamViec") 
-                               ?? MenuItems.FirstOrDefault(m => m.Code == "HoaDonBan") 
-                               ?? MenuItems.FirstOrDefault();
+        // Ưu tiên hiển thị màn hình phù hợp với vai trò
+        MenuItemModel? defaultSelectedItem = userSession.Role switch
+        {
+            "ThuNgan" => MenuItems.FirstOrDefault(m => m.Code == "CaLamViec") 
+                      ?? MenuItems.FirstOrDefault(m => m.Code == "HoaDonBan"),
+            "PhaChe" => MenuItems.FirstOrDefault(m => m.Code == "PhaChe"),
+            _ => MenuItems.FirstOrDefault(m => m.Code == "Dashboard") 
+              ?? MenuItems.FirstOrDefault()
+        };
         
-        SelectedMenuItem = defaultSelectedItem;
+        if (defaultSelectedItem != null)
+        {
+            SelectedMenuItem = defaultSelectedItem;
+            // Mở nhóm chứa item được chọn
+            var groupContainingItem = MenuGroups.FirstOrDefault(g => g.Items.Contains(defaultSelectedItem));
+            if (groupContainingItem != null)
+            {
+                groupContainingItem.IsExpanded = true;
+            }
+        }
+
         _dangXuatCommand.RaiseCanExecuteChanged();
 
         // Set navigation callback for dashboard
         _dashboardViewModel.SetNavigationCallback(NavigateToModuleByCode);
+    }
+
+    /// <summary>Xác định thứ tự hiển thị của các nhóm menu</summary>
+    private static int GetGroupOrder(string groupName)
+    {
+        return groupName switch
+        {
+            "Tổng quan" => 1,
+            "Bán hàng" => 2,
+            "Báo cáo" => 3,
+            "Kho & Nhập hàng" => 4,
+            "Sản phẩm & Menu" => 5,
+            "Khách hàng & Marketing" => 6,
+            "Vận hành" => 7,
+            "Quản trị hệ thống" => 8,
+            "Tài khoản" => 9,
+            _ => 99
+        };
+    }
+
+    /// <summary>Lấy icon cho nhóm menu (hiển thị khi sidebar collapsed)</summary>
+    private static string GetGroupIcon(string groupName)
+    {
+        return groupName switch
+        {
+            "Tổng quan" => "🏠",
+            "Bán hàng" => "🛒",
+            "Báo cáo" => "📊",
+            "Kho & Nhập hàng" => "📦",
+            "Sản phẩm & Menu" => "☕",
+            "Khách hàng & Marketing" => "👥",
+            "Vận hành" => "🍹",
+            "Quản trị hệ thống" => "⚙",
+            "Tài khoản" => "👤",
+            _ => "📁"
+        };
     }
 
     public void NavigateToModuleByCode(string moduleCode)
@@ -190,6 +301,13 @@ public sealed class MainShellViewModel : BaseViewModel
         if (menuItem is not null)
         {
             SelectedMenuItem = menuItem;
+            
+            // Mở nhóm chứa item được chọn
+            var groupContainingItem = MenuGroups.FirstOrDefault(g => g.Items.Contains(menuItem));
+            if (groupContainingItem != null)
+            {
+                groupContainingItem.IsExpanded = true;
+            }
         }
     }
 
@@ -220,6 +338,11 @@ public sealed class MainShellViewModel : BaseViewModel
         _dangXuatCommand.RaiseCanExecuteChanged();
     }
 
+    private void ExecuteToggleSidebar()
+    {
+        IsSidebarCollapsed = !IsSidebarCollapsed;
+    }
+
     private void NavigateMenu(MenuItemModel menuItem)
     {
         if (string.IsNullOrWhiteSpace(_currentUserRole)
@@ -241,10 +364,7 @@ public sealed class MainShellViewModel : BaseViewModel
                 CurrentContentViewModel = _auditLogViewModel;
                 _ = _auditLogViewModel.LoadAsync();
                 return;
-            case "ExportPrint":
-                CurrentContentViewModel = _exportPrintViewModel;
-                _ = _exportPrintViewModel.LoadAsync();
-                return;
+            // ExportPrint case removed - functionality moved to individual pages
             case "KhuyenMai":
                 CurrentContentViewModel = _khuyenMaiViewModel;
                 _ = _khuyenMaiViewModel.LoadAsync();
@@ -293,10 +413,7 @@ public sealed class MainShellViewModel : BaseViewModel
                 CurrentContentViewModel = _canhBaoTonKhoViewModel;
                 _ = _canhBaoTonKhoViewModel.LoadAsync();
                 return;
-            case "TimKiemSanPham":
-                CurrentContentViewModel = _timKiemSanPhamViewModel;
-                _ = _timKiemSanPhamViewModel.LoadAsync();
-                return;
+            // TimKiemSanPham case removed - search functionality integrated into product pages
             case "HoaDonNhap":
                 CurrentContentViewModel = _hoaDonNhapViewModel;
                 _ = _hoaDonNhapViewModel.LoadAsync();
@@ -349,15 +466,26 @@ public sealed class MainShellViewModel : BaseViewModel
         return code switch
         {
             "Dashboard" => "Theo dõi nhanh tình hình hoạt động trong ngày và các chỉ số cần chú ý.",
-            "HoaDonNhap" => "Lập phiếu nhập, kiểm tra số lượng, đơn giá và cập nhật tồn kho.",
-            "HoaDonBan" => "Khách order tại quầy, thanh toán ngay, nhận nước sau. Mỗi lần mua thêm sẽ tạo một hóa đơn mới.",
             "ThongKe" => "Xem doanh thu, số lượng bán và kết quả kinh doanh theo thời gian.",
-            "BaoCao" => "Tổng hợp số liệu để đối chiếu, in báo cáo.",
+            "BaoCao" => "Tổng hợp số liệu doanh thu để đối chiếu, xuất PDF/Excel.",
+            "TopSanPhamBanChay" => "Xem danh sách sản phẩm bán chạy nhất theo thời gian, xuất báo cáo.",
+            "HoaDonNhap" => "Lập phiếu nhập, kiểm tra số lượng, đơn giá và cập nhật tồn kho.",
+            "HoaDonBan" => "Khách order tại quầy, thanh toán ngay, in hóa đơn và phiếu pha chế.",
+            "LichSuHoaDon" => "Tra cứu, xem chi tiết, in lại hóa đơn và phiếu pha chế.",
             "PhaChe" => "Theo dõi các đơn đã thanh toán và cập nhật trạng thái pha chế.",
-            // Module Quản lý bàn đã bị gỡ
-            // "QuanLyBan" => "Theo dõi trạng thái bàn và hỗ trợ sắp xếp phục vụ tại quán.",
-            "AuditLog" => "Xem lại lịch sử thao tác để kiểm tra và đối chiếu khi cần.",
+            "CaLamViec" => "Quản lý ca làm việc, mở ca, đóng ca và xem báo cáo ca.",
+            "NguyenLieu" => "Quản lý kho nguyên liệu, theo dõi tồn kho và lịch sử nhập xuất.",
+            "CanhBaoTonKho" => "Cảnh báo nguyên liệu sắp hết để kịp thời nhập hàng.",
+            "NhaCungCap" => "Quản lý thông tin nhà cung cấp nguyên liệu.",
+            "Mon" => "Quản lý sản phẩm, giá bán, trạng thái còn hàng.",
+            "DanhMuc" => "Quản lý danh mục sản phẩm để phân loại menu.",
+            "CongThucMon" => "Quản lý công thức món, định mức nguyên liệu cho từng sản phẩm.",
+            "TrangThaiSanPham" => "Theo dõi trạng thái còn hàng/hết hàng của sản phẩm.",
+            "KhachHang" => "Quản lý khách hàng thân thiết, tích điểm và ưu đãi.",
+            "KhuyenMai" => "Quản lý chương trình khuyến mãi và giảm giá.",
             "QuanLyTaiKhoan" => "Quản lý tài khoản người dùng, vai trò và trạng thái hoạt động.",
+            "CauHinhHeThong" => "Cấu hình các thông số hệ thống và tùy chỉnh.",
+            "AuditLog" => "Xem lại lịch sử thao tác để kiểm tra và đối chiếu khi cần.",
             "DoiMatKhau" => "Đổi mật khẩu đăng nhập để bảo vệ tài khoản cá nhân.",
             _ => ""
         };

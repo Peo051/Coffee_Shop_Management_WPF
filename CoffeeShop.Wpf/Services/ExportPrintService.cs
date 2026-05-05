@@ -37,28 +37,28 @@ public sealed class ExportPrintService : IExportPrintService
         }
 
         var rows = await _exportPrintRepository.GetDuLieuBaoCaoDonGianAsync(fromDate, toDate, cancellationToken);
-        var lines = new List<string>();
-        lines.AddRange(await BuildHeaderLinesAsync(cancellationToken));
-        lines.Add("BÁO CÁO ĐƠN GIẢN");
-        lines.Add($"Từ ngày: {fromDate:dd/MM/yyyy}");
-        lines.Add($"Đến ngày: {toDate:dd/MM/yyyy}");
-        lines.Add($"Số dòng dữ liệu: {rows.Count}");
-        lines.Add(string.Empty);
-
-        lines.AddRange(rows.Select(x =>
-            $"{x.Ngay:dd/MM/yyyy} | Số HĐ: {x.SoHoaDon} | Tổng: {x.TongTien:N0} | Giảm: {x.TongGiamGia:N0} | Thuần: {x.DoanhThuThuan:N0}"));
-
         var outputPath = BuildOutputPath(outputDirectory, "BaoCaoDonGian", "pdf");
-        await SimplePdfWriter.WriteLinesAsPdfAsync(outputPath, lines, cancellationToken);
+
+        // Lấy cấu hình hệ thống cho header/footer
+        var cauHinh = await GetCauHinhOrNullAsync(cancellationToken);
+
+        // Tạo PDF với header, footer chuyên nghiệp
+        await PdfReportWriter.TaoBaoCaoDonGianAsync(
+            outputPath,
+            fromDate,
+            toDate,
+            rows,
+            cauHinh,
+            cancellationToken);
 
         await TryWriteAuditAsync(
             nguoiDungId,
-            "Xuất PDF báo cáo đơn giản",
+            "Xuất PDF báo cáo theo ngày",
             "BaoCao",
             $"Từ {fromDate:dd/MM/yyyy} đến {toDate:dd/MM/yyyy}, số dòng: {rows.Count}",
             cancellationToken);
 
-        return ServiceResult<string>.Success(outputPath, "Đã tạo file PDF cơ bản để lưu trữ/xem thử.");
+        return ServiceResult<string>.Success(outputPath, "Đã tạo file PDF thành công.");
     }
 
     public async Task<ServiceResult<string>> XuatPdfBaoCaoNangCaoAsync(
@@ -75,28 +75,28 @@ public sealed class ExportPrintService : IExportPrintService
         }
 
         var rows = await _exportPrintRepository.GetDuLieuBaoCaoNangCaoAsync(fromDate, toDate, cancellationToken);
-        var lines = new List<string>();
-        lines.AddRange(await BuildHeaderLinesAsync(cancellationToken));
-        lines.Add("BÁO CÁO NÂNG CAO");
-        lines.Add($"Từ ngày: {fromDate:dd/MM/yyyy}");
-        lines.Add($"Đến ngày: {toDate:dd/MM/yyyy}");
-        lines.Add($"Số dòng dữ liệu: {rows.Count}");
-        lines.Add(string.Empty);
-
-        lines.AddRange(rows.Select(x =>
-            $"{x.MonId} | {x.TenMon} | Số lượng: {x.SoLuongBan} | Doanh thu: {x.DoanhThuGop:N0} | Giá TB: {x.GiaBanTrungBinh:N0}"));
-
         var outputPath = BuildOutputPath(outputDirectory, "BaoCaoNangCao", "pdf");
-        await SimplePdfWriter.WriteLinesAsPdfAsync(outputPath, lines, cancellationToken);
+
+        // Lấy cấu hình hệ thống cho header/footer
+        var cauHinh = await GetCauHinhOrNullAsync(cancellationToken);
+
+        // Tạo PDF với header, footer chuyên nghiệp
+        await PdfReportWriter.TaoBaoCaoNangCaoAsync(
+            outputPath,
+            fromDate,
+            toDate,
+            rows,
+            cauHinh,
+            cancellationToken);
 
         await TryWriteAuditAsync(
             nguoiDungId,
-            "Xuất PDF báo cáo nâng cao",
+            "Xuất PDF báo cáo doanh thu theo sản phẩm",
             "BaoCao",
             $"Từ {fromDate:dd/MM/yyyy} đến {toDate:dd/MM/yyyy}, số dòng: {rows.Count}",
             cancellationToken);
 
-        return ServiceResult<string>.Success(outputPath, "Đã tạo file PDF cơ bản để lưu trữ/xem thử.");
+        return ServiceResult<string>.Success(outputPath, "Đã tạo file PDF thành công.");
     }
 
     public async Task<ServiceResult<string>> XuatCsvThongKeAsync(
@@ -207,7 +207,7 @@ public sealed class ExportPrintService : IExportPrintService
         if (string.Equals(loai, "DonGian", StringComparison.OrdinalIgnoreCase))
         {
             var rows = await _exportPrintRepository.GetDuLieuBaoCaoDonGianAsync(fromDate, toDate, cancellationToken);
-            lines.Add("PREVIEW BÁO CÁO ĐƠN GIẢN");
+            lines.Add("PREVIEW BÁO CÁO DOANH THU THEO NGÀY");
             lines.Add($"Từ ngày: {fromDate:dd/MM/yyyy}");
             lines.Add($"Đến ngày: {toDate:dd/MM/yyyy}");
             lines.Add($"Số dòng: {rows.Count}");
@@ -217,7 +217,7 @@ public sealed class ExportPrintService : IExportPrintService
         else
         {
             var rows = await _exportPrintRepository.GetDuLieuBaoCaoNangCaoAsync(fromDate, toDate, cancellationToken);
-            lines.Add("PREVIEW BÁO CÁO NÂNG CAO");
+            lines.Add("PREVIEW BÁO CÁO DOANH THU THEO SẢN PHẨM");
             lines.Add($"Từ ngày: {fromDate:dd/MM/yyyy}");
             lines.Add($"Đến ngày: {toDate:dd/MM/yyyy}");
             lines.Add($"Số dòng: {rows.Count}");
@@ -419,7 +419,7 @@ public sealed class ExportPrintService : IExportPrintService
         }
 
         lines.Add("----------------------------------------");
-        lines.Add($"THÀNH TOÁN:       {model.ThanhToan:N0} đ");
+        lines.Add($"THANH TOÁN:       {model.ThanhToan:N0} đ");
         lines.Add("----------------------------------------");
         lines.Add(string.Empty);
         
@@ -449,7 +449,7 @@ public sealed class ExportPrintService : IExportPrintService
         if (model.DiemCong > 0)
         {
             lines.Add(string.Empty);
-            lines.Add($"🎁 Điểm cộng: +{model.DiemCong} điểm");
+            lines.Add($"Điểm cộng: +{model.DiemCong} điểm");
         }
 
         // Ghi chú
@@ -478,7 +478,6 @@ public sealed class ExportPrintService : IExportPrintService
     private static IReadOnlyList<string> BuildPhieuPhaCheTextLines(HoaDonBanInModel model, IReadOnlyList<string> headerLines)
     {
         var lines = new List<string>();
-        lines.AddRange(headerLines);
         lines.Add("========================================");
         lines.Add("          PHIẾU PHA CHẾ");
         lines.Add("========================================");
@@ -602,6 +601,17 @@ public sealed class ExportPrintService : IExportPrintService
 
         lines.Add(string.Empty);
         return lines;
+    }
+
+    private async Task<CauHinhHeThong?> GetCauHinhOrNullAsync(CancellationToken cancellationToken)
+    {
+        if (_cauHinhHeThongService is null)
+        {
+            return null;
+        }
+
+        var result = await _cauHinhHeThongService.GetCauHinhAsync(cancellationToken);
+        return result.IsSuccess ? result.Data : null;
     }
 
     private async Task TryWriteAuditAsync(

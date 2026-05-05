@@ -106,7 +106,7 @@ public class PaymentsController : ControllerBase
             }
 
             // Xử lý webhook - service sẽ không throw exception
-            var result = await _paymentGatewayService.HandleWebhookAsync(payload, cancellationToken);
+            var result = await _paymentGatewayService.HandleWebhookAsync(payload ?? string.Empty, cancellationToken);
 
             if (result.Success)
             {
@@ -158,6 +158,73 @@ public class PaymentsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error cancelling payment for HoaDonBan {HoaDonBanId}", hoaDonBanId);
+            return StatusCode(500, new { message = $"Lỗi hệ thống: {ex.Message}" });
+        }
+    }
+
+    /// <summary>
+    /// Test endpoint: Xác nhận thanh toán thành công (simulate webhook)
+    /// </summary>
+    [HttpPost("test/confirm/{hoaDonBanId}")]
+    public async Task<IActionResult> TestConfirmPayment(
+        int hoaDonBanId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (hoaDonBanId <= 0)
+            {
+                return BadRequest(new { message = "HoaDonBanId không hợp lệ" });
+            }
+
+            _logger.LogInformation("Test confirm payment for HoaDonBan {HoaDonBanId}", hoaDonBanId);
+
+            // Lấy thông tin payment hiện tại để lấy orderCode thật
+            var status = await _paymentGatewayService.GetStatusAsync(hoaDonBanId, cancellationToken);
+            
+            if (status == null)
+            {
+                return NotFound(new { message = "Không tìm thấy hóa đơn" });
+            }
+
+            if (!status.ProviderOrderCode.HasValue)
+            {
+                return BadRequest(new { message = "Hóa đơn chưa có QR payment. Vui lòng tạo QR trước." });
+            }
+
+            // Tạo webhook giả với orderCode thật
+            var fakeWebhook = new
+            {
+                code = "00",
+                desc = "success",
+                signature = "test",
+                data = new
+                {
+                    orderCode = status.ProviderOrderCode.Value,
+                    amount = (int)status.ThanhToan,
+                    code = "00",
+                    desc = "Thanh toán thành công (Xác nhận thủ công)",
+                    reference = $"MANUAL-{DateTime.Now:yyyyMMddHHmmss}",
+                    paymentLinkId = status.ProviderPaymentId ?? "manual-confirm"
+                }
+            };
+
+            var json = System.Text.Json.JsonSerializer.Serialize(fakeWebhook);
+            var result = await _paymentGatewayService.HandleWebhookAsync(json, cancellationToken);
+
+            if (result.Success)
+            {
+                _logger.LogInformation("Test payment confirmed successfully for HoaDonBan {HoaDonBanId}", hoaDonBanId);
+                return Ok(new { message = "✅ Xác nhận thanh toán thành công!", result });
+            }
+            else
+            {
+                return BadRequest(new { message = result.Message });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in test confirm payment for HoaDonBan {HoaDonBanId}", hoaDonBanId);
             return StatusCode(500, new { message = $"Lỗi hệ thống: {ex.Message}" });
         }
     }

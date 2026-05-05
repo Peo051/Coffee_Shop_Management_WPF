@@ -25,7 +25,7 @@
                            FontSize="20"
                            FontWeight="SemiBold" />
 
-                    <!-- Hàng 1: Ngày, mã HĐ, mã NV, mã bàn, mã ca -->
+                    <!-- Hàng 1: Ngày, mã HĐ, mã NV, mã ca -->
                     <WrapPanel Margin="0,12,0,0">
                         <DatePicker SelectedDate="{Binding FromDate, Mode=TwoWay}" />
                         <DatePicker Margin="8,0,0,0" SelectedDate="{Binding ToDate, Mode=TwoWay}" />
@@ -41,12 +41,6 @@
                              Style="{StaticResource HintTextBoxStyle}"
                              Tag="Mã nhân viên"
                              Text="{Binding MaNhanVien, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBox Width="80"
-                             Margin="8,0,0,0"
-                             Padding="10,6"
-                             Style="{StaticResource HintTextBoxStyle}"
-                             Tag="Mã bàn"
-                             Text="{Binding MaBan, UpdateSourceTrigger=PropertyChanged}" />
                         <TextBox Width="80"
                              Margin="8,0,0,0"
                              Padding="10,6"
@@ -76,10 +70,6 @@
                               Margin="8,0,0,0"
                               ItemsSource="{Binding DanhSachTrangThaiThanhToan}"
                               SelectedItem="{Binding TrangThaiThanhToanFilter, Mode=TwoWay}" />
-                        <ComboBox Width="130"
-                              Margin="8,0,0,0"
-                              ItemsSource="{Binding DanhSachTrangThaiPhaChe}"
-                              SelectedItem="{Binding TrangThaiPhaCheFilter, Mode=TwoWay}" />
                     </WrapPanel>
 
                     <!-- Nút bấm -->
@@ -94,7 +84,14 @@
                         <Button Width="120"
                             Margin="8,0,0,0"
                             Content="In hóa đơn"
-                            Command="{Binding InHoaDonCommand}" />
+                            Command="{Binding InHoaDonCommand}"
+                            Style="{StaticResource ButtonPrimary}" />
+                        <Button Width="140"
+                            Margin="8,0,0,0"
+                            Content="In phiếu pha chế"
+                            Command="{Binding InPhieuPhaCheCommand}"
+                            Style="{StaticResource ButtonPrimary}"
+                            ToolTip="In phiếu pha chế cho quầy bar/bếp" />
                         <Button Width="90"
                             Margin="8,0,0,0"
                             Content="Làm mới"
@@ -150,8 +147,6 @@
                         <DataGridTextColumn Header="Mã HĐ" Binding="{Binding HoaDonBanId}" Width="75" />
                         <DataGridTextColumn Header="Ngày bán" Binding="{Binding NgayBan, StringFormat=dd/MM/yyyy HH:mm}" Width="140" />
                         <DataGridTextColumn Header="Nhân viên" Binding="{Binding TenNhanVien}" Width="120" />
-                        <DataGridTextColumn Header="Bàn" Binding="{Binding TenBan}" Width="90" />
-                        <DataGridTextColumn Header="Khu vực" Binding="{Binding TenKhuVuc}" Width="90" />
                         <DataGridTextColumn Header="Khách hàng" Binding="{Binding TenKhachHang}" Width="110" />
                         <DataGridTextColumn Header="SĐT" Binding="{Binding SoDienThoai}" Width="100" />
                         <DataGridTextColumn Header="Thành toán" Binding="{Binding ThanhToan, StringFormat=N0}" Width="110" />

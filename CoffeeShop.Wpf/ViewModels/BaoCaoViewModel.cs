@@ -9,8 +9,13 @@ namespace CoffeeShop.Wpf.ViewModels;
 public sealed class BaoCaoViewModel : BaseViewModel
 {
     private readonly IBaoCaoService _baoCaoService;
+    private readonly IExportPrintService _exportPrintService;
+    private readonly SessionService _sessionService;
     private readonly RelayCommand _taiBaoCaoCommand;
     private readonly RelayCommand _lamMoiCommand;
+    private readonly RelayCommand _xuatPdfCommand;
+    private readonly RelayCommand _xuatPdfNangCaoCommand;
+    private readonly RelayCommand _xuatExcelCommand;
 
     private DateTime _fromDate = DateTime.Today.AddDays(-7);
     private DateTime _toDate = DateTime.Today;
@@ -24,15 +29,20 @@ public sealed class BaoCaoViewModel : BaseViewModel
     private string _successMessage = string.Empty;
     private bool _isBusy;
 
-    public BaoCaoViewModel(IBaoCaoService baoCaoService)
+    public BaoCaoViewModel(IBaoCaoService baoCaoService, IExportPrintService exportPrintService, SessionService sessionService)
     {
         _baoCaoService = baoCaoService;
+        _exportPrintService = exportPrintService;
+        _sessionService = sessionService;
 
         BaoCaoDonGianRows = new ObservableCollection<BaoCaoDonGianDong>();
         BaoCaoNangCaoRows = new ObservableCollection<BaoCaoNangCaoDong>();
 
         _taiBaoCaoCommand = new RelayCommand(ExecuteTaiBaoCao, () => !IsBusy);
         _lamMoiCommand = new RelayCommand(ExecuteLamMoi, () => !IsBusy);
+        _xuatPdfCommand = new RelayCommand(ExecuteXuatPdf, () => !IsBusy);
+        _xuatPdfNangCaoCommand = new RelayCommand(ExecuteXuatPdfNangCao, () => !IsBusy);
+        _xuatExcelCommand = new RelayCommand(ExecuteXuatExcel, () => !IsBusy);
     }
 
     public ObservableCollection<BaoCaoDonGianDong> BaoCaoDonGianRows { get; }
@@ -96,6 +106,9 @@ public sealed class BaoCaoViewModel : BaseViewModel
             {
                 _taiBaoCaoCommand.RaiseCanExecuteChanged();
                 _lamMoiCommand.RaiseCanExecuteChanged();
+                _xuatPdfCommand.RaiseCanExecuteChanged();
+                _xuatPdfNangCaoCommand.RaiseCanExecuteChanged();
+                _xuatExcelCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -103,6 +116,12 @@ public sealed class BaoCaoViewModel : BaseViewModel
     public ICommand TaiBaoCaoCommand => _taiBaoCaoCommand;
 
     public ICommand LamMoiCommand => _lamMoiCommand;
+
+    public ICommand XuatPdfCommand => _xuatPdfCommand;
+
+    public ICommand XuatPdfNangCaoCommand => _xuatPdfNangCaoCommand;
+
+    public ICommand XuatExcelCommand => _xuatExcelCommand;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -169,5 +188,119 @@ public sealed class BaoCaoViewModel : BaseViewModel
         ToDate = DateTime.Today;
 
         await TaiBaoCaoAsync();
+    }
+
+    private async void ExecuteXuatPdf()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        try
+        {
+            var result = await _exportPrintService.XuatPdfBaoCaoDonGianAsync(
+                FromDate,
+                ToDate,
+                null,
+                _sessionService.CurrentUser?.UserId,
+                default);
+
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.Message;
+                return;
+            }
+
+            SuccessMessage = $"Xuất PDF đơn giản thành công. File: {result.Data}";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể xuất PDF: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async void ExecuteXuatPdfNangCao()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        try
+        {
+            var result = await _exportPrintService.XuatPdfBaoCaoNangCaoAsync(
+                FromDate,
+                ToDate,
+                null,
+                _sessionService.CurrentUser?.UserId,
+                default);
+
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.Message;
+                return;
+            }
+
+            SuccessMessage = $"Xuất PDF nâng cao thành công. File: {result.Data}";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể xuất PDF nâng cao: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async void ExecuteXuatExcel()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        try
+        {
+            var result = await _exportPrintService.XuatCsvThongKeAsync(
+                FromDate,
+                ToDate,
+                null,
+                _sessionService.CurrentUser?.UserId,
+                default);
+
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.Message;
+                return;
+            }
+
+            SuccessMessage = $"Xuất Excel thành công. File: {result.Data}";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể xuất Excel: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 }

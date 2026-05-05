@@ -1,147 +1,328 @@
-﻿<UserControl x:Class="CoffeeShop.Wpf.Views.TrangThaiSanPhamView"
+<UserControl x:Class="CoffeeShop.Wpf.Views.TrangThaiSanPhamView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="650"
-             d:DesignWidth="800">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+             d:DesignHeight="720"
+             d:DesignWidth="980">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Grid>
             <Grid.RowDefinitions>
+                <!-- Header + Filter -->
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="16" />
-                <RowDefinition Height="400" />
+                <RowDefinition Height="12" />
+                <!-- Main content: DataGrid + Panel thao tác -->
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Border Background="{DynamicResource CardBackgroundBrush}"
-                CornerRadius="10"
-                Padding="16">
+            <!-- ========================================== -->
+            <!-- HEADER + BỘ LỌC -->
+            <!-- ========================================== -->
+            <Border Grid.Row="0" Style="{StaticResource CardPanel}">
                 <StackPanel>
-                    <TextBlock Text="Trạng thái sản phẩm"
-                           FontSize="20"
-                           FontWeight="SemiBold" />
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="Trạng thái sản phẩm" />
+                    <TextBlock Margin="0,6,0,0"
+                               FontSize="12"
+                               Foreground="{DynamicResource MutedTextBrush}"
+                               Text="Quản lý tình trạng kinh doanh và ngưỡng cảnh báo tồn kho của từng món." />
 
-                    <Grid Margin="0,12,0,0">
+                    <!-- Bộ lọc -->
+                    <Grid Margin="0,14,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="2*" />
-                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="2*" />
-                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="2*" />
-                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="8" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <TextBox Grid.Column="0"
-                             Padding="10,6"
-                             Text="{Binding TuKhoaTimKiem, UpdateSourceTrigger=PropertyChanged}" />
+                                 Padding="10,6"
+                                 Style="{StaticResource HintTextBoxStyle}"
+                                 Tag="Tìm theo tên sản phẩm..."
+                                 Text="{Binding TuKhoaTimKiem, UpdateSourceTrigger=PropertyChanged}" />
 
                         <ComboBox Grid.Column="2"
-                              ItemsSource="{Binding DanhMucs}"
-                              SelectedItem="{Binding SelectedDanhMucTimKiem, Mode=TwoWay}"
-                              DisplayMemberPath="TenDanhMuc"
-                              Padding="8,4" />
+                                  ItemsSource="{Binding DanhMucs}"
+                                  SelectedItem="{Binding SelectedDanhMucTimKiem, Mode=TwoWay}"
+                                  DisplayMemberPath="TenDanhMuc"
+                                  Padding="8,4">
+                            <ComboBox.ToolTip>
+                                <TextBlock Text="Lọc theo danh mục" />
+                            </ComboBox.ToolTip>
+                        </ComboBox>
 
                         <ComboBox Grid.Column="4"
-                              ItemsSource="{Binding TrangThaiFilters}"
-                              SelectedItem="{Binding SelectedTrangThaiTimKiem, Mode=TwoWay}"
-                              DisplayMemberPath="DisplayName"
-                              Padding="8,4" />
+                                  ItemsSource="{Binding TrangThaiFilters}"
+                                  SelectedItem="{Binding SelectedTrangThaiTimKiem, Mode=TwoWay}"
+                                  DisplayMemberPath="DisplayName"
+                                  Padding="8,4">
+                            <ComboBox.ToolTip>
+                                <TextBlock Text="Lọc theo trạng thái kinh doanh" />
+                            </ComboBox.ToolTip>
+                        </ComboBox>
 
                         <Button Grid.Column="6"
-                            Width="110"
-                            Content="Tìm kiếm"
-                            Command="{Binding TimKiemCommand}" />
+                                Width="110"
+                                Content="Tìm kiếm"
+                                Style="{StaticResource ButtonPrimary}"
+                                Command="{Binding TimKiemCommand}" />
 
                         <Button Grid.Column="8"
-                            Width="95"
-                            Content="Làm mới"
-                            Command="{Binding LamMoiCommand}"
-                            Background="{DynamicResource SecondaryBrush}"
-                            BorderBrush="{DynamicResource SecondaryBrush}"
-                            Foreground="{DynamicResource SecondaryTextBrush}" />
+                                Width="95"
+                                Content="Làm mới"
+                                Style="{StaticResource ButtonSecondary}"
+                                Command="{Binding LamMoiCommand}" />
                     </Grid>
 
                     <TextBlock Margin="0,10,0,0"
-                           Foreground="{DynamicResource DangerBrush}"
-                           TextWrapping="Wrap"
-                           Text="{Binding ErrorMessage}" />
+                               Foreground="{DynamicResource DangerBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding ErrorMessage}" />
                     <TextBlock Margin="0,6,0,0"
-                           Foreground="{DynamicResource SuccessBrush}"
-                           TextWrapping="Wrap"
-                           Text="{Binding SuccessMessage}" />
+                               Foreground="{DynamicResource SuccessBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding SuccessMessage}" />
                 </StackPanel>
             </Border>
 
+            <!-- ========================================== -->
+            <!-- MAIN CONTENT: DATAGRID + PANEL THAO TÁC -->
+            <!-- ========================================== -->
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="4*" />
-                    <ColumnDefinition Width="16" />
-                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="1.1*" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0"
-                    Background="{DynamicResource CardBackgroundBrush}"
-                    CornerRadius="10"
-                    Padding="12">
-                    <DataGrid ItemsSource="{Binding DanhSachSanPham}"
-                          SelectedItem="{Binding SelectedSanPham, Mode=TwoWay}"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          CanUserAddRows="False"
-                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                          ScrollViewer.VerticalScrollBarVisibility="Auto"    
-                          >
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Mã" Binding="{Binding MonId}" Width="70" />
-                            <DataGridTextColumn Header="Tên sản phẩm" Binding="{Binding TenMon}" Width="200" />
-                            <DataGridTextColumn Header="Danh mục" Binding="{Binding TenDanhMuc}" Width="140" />
-                            <DataGridTextColumn Header="Tồn kho" Binding="{Binding TonKho}" Width="90" />
-                            <DataGridTextColumn Header="Ngưỡng cảnh báo" Binding="{Binding MucCanhBaoTonKho}" Width="180" />
-                            <DataGridCheckBoxColumn Header="Đang kinh doanh" Binding="{Binding IsActive}" Width="150" />
-                        </DataGrid.Columns>
-                    </DataGrid>
+                <!-- DataGrid danh sách sản phẩm -->
+                <Border Grid.Column="0" Style="{StaticResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="450" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Text="Danh sách sản phẩm" />
+
+                        <DataGrid Grid.Row="2"
+                                  ItemsSource="{Binding DanhSachSanPham}"
+                                  SelectedItem="{Binding SelectedSanPham, Mode=TwoWay}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  CanUserReorderColumns="False"
+                                  CanUserResizeRows="False"
+                                  SelectionMode="Single"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  RowHeight="40"
+                                  EnableRowVirtualization="True"
+                                  EnableColumnVirtualization="True"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                            <DataGrid.Columns>
+                                <!-- Mã: 70 -->
+                                <DataGridTextColumn Header="Mã" Binding="{Binding MonId}" Width="70" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <!-- Tên sản phẩm: * -->
+                                <DataGridTextColumn Header="Tên sản phẩm" Binding="{Binding TenMon}" Width="*" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="8,0" />
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <!-- Danh mục: 150 -->
+                                <DataGridTextColumn Header="Danh mục" Binding="{Binding TenDanhMuc}" Width="150" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <!-- Tồn kho: 90 -->
+                                <DataGridTextColumn Header="Tồn kho" Binding="{Binding TonKho}" Width="90" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="8,0" />
+                                            <Setter Property="TextAlignment" Value="Right" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <!-- Ngưỡng: 110 -->
+                                <DataGridTextColumn Header="Ngưỡng" Binding="{Binding MucCanhBaoTonKho}" Width="110" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="8,0" />
+                                            <Setter Property="TextAlignment" Value="Right" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <!-- Kinh doanh: 120 (thay CheckBox bằng Text thân thiện) -->
+                                <DataGridTemplateColumn Header="Kinh doanh" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock VerticalAlignment="Center"
+                                                       Padding="8,0"
+                                                       FontWeight="SemiBold">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="Đang bán" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                                <Setter Property="Text" Value="Ngừng bán" />
+                                                                <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
                 </Border>
 
-                <Border Grid.Column="2"
-                    Background="{DynamicResource CardBackgroundBrush}"
-                    CornerRadius="10"
-                    Padding="12">
-                    <StackPanel>
-                        <TextBlock Text="Thao tác nhanh"
-                               FontSize="16"
-                               FontWeight="SemiBold" />
+                <!-- Panel thao tác nhanh -->
+                <Border Grid.Column="2" Style="{StaticResource CardPanel}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel>
+                            <TextBlock FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Text="Thao tác nhanh" />
 
-                        <TextBlock Margin="0,10,0,0"
-                               FontWeight="SemiBold"
-                               Text="Sản phẩm đang chọn" />
-                        <TextBlock Margin="0,4,0,0"
-                               Text="{Binding SelectedSanPham.TenMon}" />
-                        <TextBlock Margin="0,2,0,0"
-                               Text="{Binding SelectedSanPham.TonKho, StringFormat=Tồn kho: {0}}" />
-                        <TextBlock Margin="0,2,0,0"
-                               Text="{Binding SelectedSanPham.IsActive, StringFormat=Đang kinh doanh: {0}}" />
+                            <!-- Empty state khi chưa chọn sản phẩm -->
+                            <StackPanel Margin="0,12,0,0">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedSanPham}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <Border Padding="12"
+                                        Background="{DynamicResource InfoBackgroundBrush}"
+                                        BorderBrush="{DynamicResource InfoBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="4">
+                                    <TextBlock FontStyle="Italic"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               TextWrapping="Wrap"
+                                               Text="Chọn một sản phẩm trong bảng để thao tác." />
+                                </Border>
+                            </StackPanel>
 
-                        <Button Margin="0,12,0,0"
-                            Content="Khóa / mở kinh doanh"
-                            Command="{Binding KhoaMoSanPhamCommand}" />
+                            <!-- Thông tin sản phẩm đang chọn -->
+                            <StackPanel>
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedSanPham}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <TextBlock Margin="0,12,0,0"
+                                           FontWeight="SemiBold"
+                                           Text="Sản phẩm đang chọn" />
+                                <TextBlock Margin="0,6,0,0"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryBrush}"
+                                           TextWrapping="Wrap"
+                                           Text="{Binding SelectedSanPham.TenMon}" />
+                                <TextBlock Margin="0,4,0,0"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource MutedTextBrush}">
+                                    <Run Text="Tồn kho:" />
+                                    <Run Text="{Binding SelectedSanPham.TonKho, Mode=OneWay}" FontWeight="SemiBold" />
+                                </TextBlock>
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                    <TextBlock FontSize="12" Text="Trạng thái: " />
+                                    <TextBlock FontSize="12" FontWeight="SemiBold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="Đang bán" />
+                                                <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedSanPham.IsActive}" Value="False">
+                                                        <Setter Property="Text" Value="Ngừng bán" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
 
-                        <TextBlock Margin="0,14,0,0"
-                               Text="Mức cảnh báo tồn kho"
-                               FontWeight="SemiBold" />
-                        <TextBox Margin="0,6,0,0"
-                             Padding="10,6"
-                             Text="{Binding MucCanhBaoTonKhoInput, UpdateSourceTrigger=PropertyChanged}" />
+                                <Separator Margin="0,12,0,12" />
 
-                        <Button Content="Cập nhật ngưỡng cảnh báo"
-                            Command="{Binding CapNhatNguongCommand}" />
-                    </StackPanel>
+                                <!-- Khóa / mở kinh doanh -->
+                                <TextBlock FontWeight="SemiBold" Text="Quản lý kinh doanh" />
+                                <Button Margin="0,6,0,0"
+                                        Content="Khóa / mở kinh doanh"
+                                        Style="{StaticResource ButtonSecondary}"
+                                        Command="{Binding KhoaMoSanPhamCommand}" />
+
+                                <Separator Margin="0,12,0,12" />
+
+                                <!-- Cập nhật ngưỡng cảnh báo -->
+                                <TextBlock FontWeight="SemiBold" Text="Mức cảnh báo tồn kho" />
+                                <TextBlock Margin="0,4,0,0"
+                                           FontSize="11"
+                                           FontStyle="Italic"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Text="Cảnh báo khi tồn kho ≤ giá trị này" />
+                                <TextBox Margin="0,6,0,0"
+                                         Padding="10,6"
+                                         Text="{Binding MucCanhBaoTonKhoInput, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <Button Margin="0,10,0,0"
+                                        Content="Cập nhật ngưỡng cảnh báo"
+                                        Style="{StaticResource ButtonPrimary}"
+                                        Command="{Binding CapNhatNguongCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
                 </Border>
             </Grid>
         </Grid>
     </ScrollViewer>
 </UserControl>
-

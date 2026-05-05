@@ -4,103 +4,354 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="720"
-             d:DesignWidth="980">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="12" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+             d:DesignHeight="900"
+             d:DesignWidth="1200">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid>
+            <Grid.RowDefinitions>
+                <!-- Form nhập liệu -->
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <!-- Danh sách nguyên liệu -->
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <!-- Lịch sử cập nhật -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource CardPanel}">
-            <StackPanel>
-                <TextBlock Style="{StaticResource SectionHeader}" Text="Quản lý công thức món" />
-                <TextBlock Margin="0,6,0,0"
-                           Foreground="{DynamicResource MutedTextBrush}"
-                           Text="Chọn món và thêm nguyên liệu với định lượng cụ thể." />
+            <!-- ========================================== -->
+            <!-- FORM NHẬP LIỆU -->
+            <!-- ========================================== -->
+            <Border Grid.Row="0" Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="Quản lý công thức món" />
+                    <TextBlock Margin="0,6,0,0"
+                               FontSize="12"
+                               Foreground="{DynamicResource MutedTextBrush}"
+                               Text="Chọn món và thêm nguyên liệu với định lượng cụ thể." />
 
-                <TextBlock Margin="0,14,0,0" FontWeight="SemiBold" Text="Chọn món" />
-                <ComboBox ItemsSource="{Binding Mons}"
-                          SelectedItem="{Binding SelectedMon, Mode=TwoWay}"
-                          DisplayMemberPath="TenMon" />
+                    <!-- Hàng 1: Chọn món | Nguyên liệu -->
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                <Grid Margin="0,12,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.5*" />
-                        <ColumnDefinition Width="12" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock FontWeight="SemiBold" Text="Chọn món" />
+                            <ComboBox Margin="0,4,0,0"
+                                      ItemsSource="{Binding Mons}"
+                                      SelectedItem="{Binding SelectedMon, Mode=TwoWay}"
+                                      DisplayMemberPath="TenMon" />
+                        </StackPanel>
 
-                    <StackPanel Grid.Column="0">
-                        <TextBlock FontWeight="SemiBold" Text="Nguyên liệu" />
-                        <ComboBox ItemsSource="{Binding NguyenLieus}"
-                                  SelectedItem="{Binding SelectedNguyenLieu, Mode=TwoWay}"
-                                  DisplayMemberPath="TenNguyenLieu" />
-                    </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock FontWeight="SemiBold" Text="Nguyên liệu" />
+                            <ComboBox Margin="0,4,0,0"
+                                      ItemsSource="{Binding NguyenLieus}"
+                                      SelectedItem="{Binding SelectedNguyenLieu, Mode=TwoWay}"
+                                      DisplayMemberPath="TenNguyenLieu"
+                                      IsEditable="True"
+                                      IsTextSearchEnabled="True"
+                                      TextSearch.TextPath="TenNguyenLieu" />
+                        </StackPanel>
+                    </Grid>
 
-                    <StackPanel Grid.Column="2">
-                        <TextBlock FontWeight="SemiBold" Text="Định lượng" />
-                        <TextBox Text="{Binding DinhLuong, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
+                    <!-- Hàng 2: Định lượng + đơn vị | Tỷ lệ hao hụt (%) -->
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock FontWeight="SemiBold" Text="Định lượng" />
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0"
+                                         Text="{Binding DinhLuong, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding DonViTinhHienThi}"
+                                           VerticalAlignment="Center"
+                                           Padding="8,0"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryBrush}" />
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock FontWeight="SemiBold" Text="Tỷ lệ hao hụt (%)" />
+                            <TextBox Margin="0,4,0,0" Text="{Binding TyLeHaoHut, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Hàng 3: Ghi chú | Giá vốn ước tính -->
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock FontWeight="SemiBold" Text="Ghi chú" />
+                            <TextBox Margin="0,4,0,0" Text="{Binding GhiChu, UpdateSourceTrigger=PropertyChanged}" MaxLength="255" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock FontWeight="SemiBold" Text="Giá vốn ước tính (đã tính hao hụt)" />
+                            <Border Margin="0,4,0,0"
+                                    Background="{DynamicResource InfoBackgroundBrush}"
+                                    BorderBrush="{DynamicResource InfoBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="10,8">
+                                <TextBlock FontSize="16"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource PrimaryBrush}"
+                                           Text="{Binding GiaVonDaTinhHienThi}"
+                                           TextAlignment="Center" />
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Hàng 4: Các bước thực hiện (full width) -->
+                    <TextBlock Margin="0,10,0,0" FontWeight="SemiBold" Text="Các bước thực hiện (hướng dẫn pha chế)" />
+                    <TextBox Margin="0,4,0,0"
+                             Text="{Binding CacBuocThucHien, UpdateSourceTrigger=PropertyChanged}"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             MinHeight="70"
+                             MaxHeight="120"
+                             VerticalScrollBarVisibility="Auto" />
+
+                    <!-- Hàng 5: Nút thêm nguyên liệu -->
+                    <WrapPanel Margin="0,14,0,0">
+                        <Button Width="140"
+                                Content="{Binding ThemNguyenLieuButtonText}"
+                                Style="{StaticResource ButtonPrimary}"
+                                Command="{Binding ThemNguyenLieuCommand}" />
+                    </WrapPanel>
+
+                    <TextBlock Margin="0,8,0,0"
+                               Foreground="{DynamicResource DangerBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding ErrorMessage}" />
+                    <TextBlock Margin="0,4,0,0"
+                               Foreground="{DynamicResource SuccessBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding SuccessMessage}" />
+                </StackPanel>
+            </Border>
+
+            <!-- ========================================== -->
+            <!-- DANH SÁCH NGUYÊN LIỆU TRONG CÔNG THỨC -->
+            <!-- ========================================== -->
+            <Border Grid.Row="2" Style="{StaticResource CardPanel}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Text="Danh sách nguyên liệu trong công thức" />
+
+                    <DataGrid Grid.Row="2"
+                              MaxHeight="320"
+                              ItemsSource="{Binding CongThucMons}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              CanUserReorderColumns="False"
+                              CanUserResizeRows="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              RowHeight="40"
+                              EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <!-- Mã: 60 -->
+                            <DataGridTextColumn Header="Mã" Binding="{Binding CongThucMonId}" Width="60" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Nguyên liệu: 2* -->
+                            <DataGridTextColumn Header="Nguyên liệu" Binding="{Binding TenNguyenLieu}" Width="160" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Định lượng: 110 -->
+                            <DataGridTextColumn Header="Định lượng" Binding="{Binding DinhLuongHienThi}" Width="110" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Đơn vị: 80 -->
+                            <DataGridTextColumn Header="Đơn vị" Binding="{Binding DonViTinh}" Width="80" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="TextAlignment" Value="Center" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Giá vốn: 120 -->
+                            <DataGridTextColumn Header="Giá vốn" Binding="{Binding GiaVonNguyenLieuHienThi}" Width="120" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Hao hụt (%): 100 -->
+                            <DataGridTextColumn Header="Hao hụt (%)" Binding="{Binding TyLeHaoHut}" Width="100" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Ghi chú: 1.3* -->
+                            <DataGridTextColumn Header="Ghi chú" Binding="{Binding GhiChu}" Width="1.3*" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Thao tác: 125 -->
+                            <DataGridTemplateColumn Header="Thao tác" Width="125">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Button Content="Sửa"
+                                                    Width="54"
+                                                    Margin="2"
+                                                    Style="{StaticResource ButtonWarning}"
+                                                    Command="{Binding DataContext.SuaNguyenLieuCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Content="Xóa"
+                                                    Width="54"
+                                                    Margin="2"
+                                                    Style="{StaticResource ButtonDanger}"
+                                                    Command="{Binding DataContext.XoaNguyenLieuCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </Grid>
+            </Border>
 
-                <TextBlock Margin="0,8,0,0" FontWeight="SemiBold" Text="Ghi chú" />
-                <TextBox Text="{Binding GhiChu, UpdateSourceTrigger=PropertyChanged}" MaxLength="255" />
+            <!-- ========================================== -->
+            <!-- LỊCH SỬ CẬP NHẬT CÔNG THỨC -->
+            <!-- ========================================== -->
+            <Border Grid.Row="4" Style="{StaticResource CardPanel}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="8" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                <WrapPanel Margin="0,14,0,0">
-                    <Button Width="140"
-                            Content="Thêm nguyên liệu"
-                            Style="{StaticResource ButtonPrimary}"
-                            Command="{Binding ThemNguyenLieuCommand}" />
-                </WrapPanel>
+                    <TextBlock Grid.Row="0"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Text="Lịch sử cập nhật công thức" />
 
-                <TextBlock Margin="0,8,0,0"
-                           Foreground="{DynamicResource DangerBrush}"
-                           TextWrapping="Wrap"
-                           Text="{Binding ErrorMessage}" />
-                <TextBlock Margin="0,4,0,0"
-                           Foreground="{DynamicResource SuccessBrush}"
-                           TextWrapping="Wrap"
-                           Text="{Binding SuccessMessage}" />
-            </StackPanel>
-        </Border>
+                    <DataGrid Grid.Row="2"
+                              MaxHeight="200"
+                              ItemsSource="{Binding LichSuCapNhats}"
+                              IsReadOnly="True"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              CanUserReorderColumns="False"
+                              CanUserResizeRows="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              RowHeight="38"
+                              EnableRowVirtualization="True"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <!-- Ngày giờ: 150 -->
+                            <DataGridTextColumn Header="Ngày giờ" Binding="{Binding NgayCapNhatHienThi}" Width="150" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
 
-        <Border Grid.Row="2" Style="{StaticResource CardPanel}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="10" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+                            <!-- Người cập nhật: 150 -->
+                            <DataGridTextColumn Header="Người cập nhật" Binding="{Binding NguoiCapNhat}" Width="150" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
 
-                <TextBlock FontSize="18"
-                           FontWeight="SemiBold"
-                           Text="Danh sách nguyên liệu trong công thức" />
-
-                <DataGrid Grid.Row="2"
-                          ItemsSource="{Binding CongThucMons}"
-                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                          ScrollViewer.VerticalScrollBarVisibility="Auto">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Mã" Binding="{Binding CongThucMonId}" Width="80" />
-                        <DataGridTextColumn Header="Nguyên liệu" Binding="{Binding TenNguyenLieu}" Width="2*" />
-                        <DataGridTextColumn Header="Định lượng" Binding="{Binding DinhLuongHienThi}" Width="140" />
-                        <DataGridTextColumn Header="Đơn vị" Binding="{Binding DonViTinh}" Width="100" />
-                        <DataGridTextColumn Header="Ghi chú" Binding="{Binding GhiChu}" Width="2*" />
-                        <DataGridTemplateColumn Header="Thao tác" Width="100">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="Xóa"
-                                            Style="{StaticResource ButtonDanger}"
-                                            Command="{Binding DataContext.XoaNguyenLieuCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </Grid>
-        </Border>
-    </Grid>
+                            <!-- Nội dung: * -->
+                            <DataGridTextColumn Header="Nội dung" Binding="{Binding NoiDungCapNhat}" Width="*" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+    </ScrollViewer>
 </UserControl>

@@ -10,6 +10,7 @@ public sealed class CanhBaoTonKhoViewModel : BaseViewModel
 {
     private readonly IKhoService _khoService;
     private readonly IDanhMucService _danhMucService;
+    private readonly INguyenLieuService _nguyenLieuService;
     private readonly RelayCommand _taiDanhSachCommand;
     private readonly RelayCommand _lamMoiCommand;
 
@@ -19,13 +20,15 @@ public sealed class CanhBaoTonKhoViewModel : BaseViewModel
     private string _successMessage = string.Empty;
     private bool _isBusy;
 
-    public CanhBaoTonKhoViewModel(IKhoService khoService, IDanhMucService danhMucService)
+    public CanhBaoTonKhoViewModel(IKhoService khoService, IDanhMucService danhMucService, INguyenLieuService nguyenLieuService)
     {
         _khoService = khoService;
         _danhMucService = danhMucService;
+        _nguyenLieuService = nguyenLieuService;
 
         DanhMucs = new ObservableCollection<DanhMuc>();
         DanhSachCanhBao = new ObservableCollection<CanhBaoTonKhoThapDong>();
+        DanhSachCanhBaoNguyenLieu = new ObservableCollection<NguyenLieu>();
 
         _taiDanhSachCommand = new RelayCommand(ExecuteTaiDanhSach, () => !IsBusy);
         _lamMoiCommand = new RelayCommand(ExecuteLamMoi, () => !IsBusy);
@@ -34,6 +37,8 @@ public sealed class CanhBaoTonKhoViewModel : BaseViewModel
     public ObservableCollection<DanhMuc> DanhMucs { get; }
 
     public ObservableCollection<CanhBaoTonKhoThapDong> DanhSachCanhBao { get; }
+
+    public ObservableCollection<NguyenLieu> DanhSachCanhBaoNguyenLieu { get; }
 
     public string TuKhoaTimKiem
     {
@@ -141,6 +146,7 @@ public sealed class CanhBaoTonKhoViewModel : BaseViewModel
 
     private async Task TaiDanhSachAsyncCore(CancellationToken cancellationToken = default)
     {
+        // Tải cảnh báo sản phẩm
         var result = await _khoService.GetCanhBaoTonKhoThapAsync(
             TuKhoaTimKiem,
             SelectedDanhMuc?.DanhMucId,
@@ -158,9 +164,27 @@ public sealed class CanhBaoTonKhoViewModel : BaseViewModel
             DanhSachCanhBao.Add(item);
         }
 
-        SuccessMessage = DanhSachCanhBao.Count == 0
-            ? "Không có sản phẩm nào đang ở mức tồn kho cảnh báo."
-            : $"Có {DanhSachCanhBao.Count} sản phẩm cảnh báo tồn kho thấp.";
+        // Tải cảnh báo nguyên liệu
+        var nguyenLieus = await _nguyenLieuService.GetCanhBaoTonKhoThapAsync(
+            TuKhoaTimKiem,
+            cancellationToken);
+
+        DanhSachCanhBaoNguyenLieu.Clear();
+        foreach (var item in nguyenLieus)
+        {
+            DanhSachCanhBaoNguyenLieu.Add(item);
+        }
+
+        var tongCanhBao = DanhSachCanhBao.Count + DanhSachCanhBaoNguyenLieu.Count;
+        
+        if (tongCanhBao == 0)
+        {
+            SuccessMessage = "Không có sản phẩm hoặc nguyên liệu nào đang ở mức tồn kho cảnh báo.";
+        }
+        else
+        {
+            SuccessMessage = $"Có {DanhSachCanhBao.Count} sản phẩm và {DanhSachCanhBaoNguyenLieu.Count} nguyên liệu cảnh báo tồn kho thấp.";
+        }
     }
 
     private async Task LoadDanhMucAsync(CancellationToken cancellationToken)

@@ -6,179 +6,436 @@
              mc:Ignorable="d"
              d:DesignHeight="720"
              d:DesignWidth="980">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="12" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.6*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <!-- VÙNG 1: Form + Bộ lọc -->
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <!-- VÙNG 2: Danh sách nguyên liệu -->
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <!-- VÙNG 3: Chi tiết nguyên liệu -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <Border Grid.Column="0" Style="{StaticResource CardPanel}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource SectionHeader}" Text="Quản lý nguyên liệu" />
-                    <TextBlock Margin="0,6,0,0"
-                               Foreground="{DynamicResource MutedTextBrush}"
-                               Text="Tạo nhanh nguyên liệu mới và quản lý tồn kho nguyên liệu thô (cà phê, sữa, đường...)." />
+            <!-- ========================================== -->
+            <!-- VÙNG 1: FORM + BỘ LỌC -->
+            <!-- ========================================== -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="65*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="35*" />
+                </Grid.ColumnDefinitions>
 
-                    <TextBlock Margin="0,14,0,0" FontWeight="SemiBold" Text="Tên nguyên liệu" />
-                    <TextBox Text="{Binding TenNguyenLieu, UpdateSourceTrigger=PropertyChanged}" MaxLength="150" />
+                <!-- FORM THÊM/SỬA NGUYÊN LIỆU -->
+                <Border Grid.Column="0" Style="{StaticResource CardPanel}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="{Binding FormTitle}" />
+                        <TextBlock Margin="0,6,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource MutedTextBrush}"
+                                   Text="Tạo nhanh nguyên liệu mới và quản lý tồn kho nguyên liệu thô (cà phê, sữa, đường...)." />
 
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
+                        <!-- Tên nguyên liệu - Full width -->
+                        <TextBlock Margin="0,14,0,4" FontWeight="SemiBold" Text="Tên nguyên liệu" />
+                        <TextBox Text="{Binding TenNguyenLieu, UpdateSourceTrigger=PropertyChanged}" MaxLength="150" />
 
-                        <StackPanel Grid.Column="0">
-                            <TextBlock FontWeight="SemiBold" Text="Đơn vị tính" />
-                            <TextBox Text="{Binding DonViTinh, UpdateSourceTrigger=PropertyChanged}" MaxLength="30" />
-                            <TextBlock Margin="0,2,0,0"
-                                       FontSize="11"
-                                       FontStyle="Italic"
-                                       Foreground="{DynamicResource MutedTextBrush}"
-                                       Text="Ví dụ: kg, lít, chai, cái" />
+                        <!-- Hàng 2: Đơn vị tính | Đơn giá nhập -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock FontWeight="SemiBold" Text="Đơn vị tính" />
+                                <TextBox Margin="0,4,0,0" Text="{Binding DonViTinh, UpdateSourceTrigger=PropertyChanged}" MaxLength="30" />
+                                <TextBlock Margin="0,3,0,0"
+                                           FontSize="11"
+                                           FontStyle="Italic"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Text="Ví dụ: kg, lít, chai, cái" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock FontWeight="SemiBold" Text="Đơn giá nhập" />
+                                <TextBox Margin="0,4,0,0" Text="{Binding DonGiaNhap, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Hàng 3: Tồn kho ban đầu | Ngưỡng cảnh báo -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock FontWeight="SemiBold" Text="Tồn kho nguyên liệu ban đầu" />
+                                <TextBox Margin="0,4,0,0" Text="{Binding TonKho, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Margin="0,3,0,0"
+                                           FontSize="11"
+                                           FontStyle="Italic"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Text="Số lượng nguyên liệu thô (kg/lít/gram...)" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock FontWeight="SemiBold" Text="Ngưỡng cảnh báo nguyên liệu" />
+                                <TextBox Margin="0,4,0,0" Text="{Binding TonKhoToiThieu, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Margin="0,3,0,0"
+                                           FontSize="11"
+                                           FontStyle="Italic"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Text="Cảnh báo khi tồn nguyên liệu ≤ giá trị này" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Hàng 4: Button actions -->
+                        <WrapPanel Margin="0,14,0,0">
+                            <Button Width="120"
+                                    Content="{Binding SubmitButtonText}"
+                                    Style="{StaticResource ButtonPrimary}"
+                                    Command="{Binding TaoMoiCommand}" />
+                            <Button Width="100"
+                                    Margin="8,0,0,0"
+                                    Content="Làm mới"
+                                    Style="{StaticResource ButtonSecondary}"
+                                    Command="{Binding LamMoiCommand}" />
+                            <Button Width="120"
+                                    Margin="8,0,0,0"
+                                    Content="Hủy chỉnh sửa"
+                                    Style="{StaticResource ButtonSecondary}"
+                                    Command="{Binding HuyChinhSuaCommand}"
+                                    Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        </WrapPanel>
+
+                        <TextBlock Margin="0,8,0,0"
+                                   Foreground="{DynamicResource DangerBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding ErrorMessage}" />
+                        <TextBlock Margin="0,4,0,0"
+                                   Foreground="{DynamicResource SuccessBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding SuccessMessage}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- BỘ LỌC TÌM KIẾM -->
+                <Border Grid.Column="2" Style="{StaticResource CardPanel}">
+                    <StackPanel>
+                        <TextBlock FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Text="Tìm kiếm nguyên liệu" />
+                        <TextBlock Margin="0,6,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource MutedTextBrush}"
+                                   Text="Lọc nhanh theo tên nguyên liệu." />
+
+                        <TextBlock Margin="0,14,0,4" FontWeight="SemiBold" Text="Từ khóa" />
+                        <TextBox Text="{Binding TuKhoaTimKiem, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <StackPanel Margin="0,14,0,0">
+                            <Button Content="Tìm kiếm"
+                                    Style="{StaticResource ButtonPrimary}"
+                                    Command="{Binding TimKiemCommand}" />
+                            <Button Margin="0,8,0,0"
+                                    Content="Làm mới"
+                                    Style="{StaticResource ButtonSecondary}"
+                                    Command="{Binding LamMoiCommand}" />
                         </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
 
-                        <StackPanel Grid.Column="2">
-                            <TextBlock FontWeight="SemiBold" Text="Đơn giá nhập" />
-                            <TextBox Text="{Binding DonGiaNhap, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-                    </Grid>
+            <!-- ========================================== -->
+            <!-- VÙNG 2: DANH SÁCH NGUYÊN LIỆU -->
+            <!-- ========================================== -->
+            <Border Grid.Row="2" Style="{StaticResource CardPanel}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Row="0"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Text="Danh sách nguyên liệu" />
 
-                        <StackPanel Grid.Column="0">
-                            <TextBlock FontWeight="SemiBold" Text="Tồn kho nguyên liệu ban đầu" />
-                            <TextBox Text="{Binding TonKho, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBlock Margin="0,2,0,0"
-                                       FontSize="11"
-                                       FontStyle="Italic"
-                                       Foreground="{DynamicResource MutedTextBrush}"
-                                       Text="Số lượng nguyên liệu thô (kg/lít/gram...)" />
-                        </StackPanel>
+                    <DataGrid Grid.Row="2"
+                              Height="400"
+                              ItemsSource="{Binding NguyenLieus}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              CanUserReorderColumns="False"
+                              CanUserResizeRows="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              RowHeight="40"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <!-- Mã: 70 -->
+                            <DataGridTextColumn Header="Mã" Binding="{Binding NguyenLieuId}" Width="70" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
 
-                        <StackPanel Grid.Column="2">
-                            <TextBlock FontWeight="SemiBold" Text="Ngưỡng cảnh báo nguyên liệu" />
-                            <TextBox Text="{Binding TonKhoToiThieu, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBlock Margin="0,2,0,0"
-                                       FontSize="11"
-                                       FontStyle="Italic"
-                                       Foreground="{DynamicResource MutedTextBrush}"
-                                       Text="Cảnh báo khi tồn nguyên liệu ≤ giá trị này" />
-                        </StackPanel>
-                    </Grid>
+                            <!-- Tên nguyên liệu: 160 -->
+                            <DataGridTextColumn Header="Tên nguyên liệu" Binding="{Binding TenNguyenLieu}" Width="160" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
 
-                    <WrapPanel Margin="0,14,0,0">
-                        <Button Width="120"
-                                Content="Tạo mới"
-                                Style="{StaticResource ButtonPrimary}"
-                                Command="{Binding TaoMoiCommand}" />
-                        <Button Width="100"
-                                Margin="8,0,0,0"
-                                Content="Làm mới"
-                                Style="{StaticResource ButtonSecondary}"
-                                Command="{Binding LamMoiCommand}" />
-                    </WrapPanel>
+                            <!-- Đơn vị: 80 -->
+                            <DataGridTextColumn Header="Đơn vị" Binding="{Binding DonViTinh}" Width="80" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
 
-                    <TextBlock Margin="0,8,0,0"
-                               Foreground="{DynamicResource DangerBrush}"
-                               TextWrapping="Wrap"
-                               Text="{Binding ErrorMessage}" />
-                    <TextBlock Margin="0,4,0,0"
-                               Foreground="{DynamicResource SuccessBrush}"
-                               TextWrapping="Wrap"
-                               Text="{Binding SuccessMessage}" />
-                </StackPanel>
+                            <!-- Tồn kho: 90 -->
+                            <DataGridTextColumn Header="Tồn kho" Binding="{Binding TonKho, StringFormat=N2}" Width="90" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Tồn tối thiểu: 110 -->
+                            <DataGridTextColumn Header="Tồn tối thiểu" Binding="{Binding TonKhoToiThieu, StringFormat=N2}" Width="110" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Trạng thái tồn: 110 -->
+                            <DataGridTemplateColumn Header="Trạng thái" Width="110">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding TrangThaiTonKhoHienThi}" 
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center"
+                                                   Padding="8,0">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding TrangThaiTonKhoHienThi}" Value="Hết hàng">
+                                                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding TrangThaiTonKhoHienThi}" Value="Sắp hết">
+                                                            <Setter Property="Foreground" Value="#FF9800" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Đơn giá nhập: 120 -->
+                            <DataGridTextColumn Header="Đơn giá" Binding="{Binding DonGiaNhap, StringFormat=N0}" Width="120" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Ngày tạo: 150 -->
+                            <DataGridTextColumn Header="Ngày tạo" Binding="{Binding CreatedAt, StringFormat=dd/MM/yyyy HH:mm}" Width="150" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Padding" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Hành động: 190 -->
+                            <DataGridTemplateColumn Header="Hành động" Width="190">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Button Content="Sửa"
+                                                    Width="52"
+                                                    Margin="2"
+                                                    Style="{StaticResource ButtonPrimary}"
+                                                    Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Content="Xóa"
+                                                    Width="52"
+                                                    Margin="2"
+                                                    Style="{StaticResource ButtonDanger}"
+                                                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Content="Xem"
+                                                    Width="56"
+                                                    Margin="2"
+                                                    Style="{StaticResource ButtonSecondary}"
+                                                    Command="{Binding DataContext.ViewDetailCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
             </Border>
 
-            <Border Grid.Column="2" Style="{StaticResource CardPanel}">
-                <StackPanel>
-                    <TextBlock FontSize="18"
-                               FontWeight="SemiBold"
-                               Text="Bộ lọc tìm kiếm" />
-                    <TextBlock Margin="0,4,0,0"
-                               Foreground="{DynamicResource MutedTextBrush}"
-                               Text="Lọc nhanh theo tên nguyên liệu." />
+            <!-- ========================================== -->
+            <!-- VÙNG 3: CHI TIẾT NGUYÊN LIỆU -->
+            <!-- ========================================== -->
+            <Border Grid.Row="4"
+                    Style="{StaticResource CardPanel}"
+                    Visibility="{Binding IsDetailVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="350">
+                    <StackPanel>
+                        <TextBlock FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Text="Chi tiết nguyên liệu" />
 
-                    <TextBlock Margin="0,12,0,0" FontWeight="SemiBold" Text="Từ khóa" />
-                    <TextBox Text="{Binding TuKhoaTimKiem, UpdateSourceTrigger=PropertyChanged}" />
+                        <Separator Margin="0,10,0,10" />
 
-                    <WrapPanel Margin="0,14,0,0">
-                        <Button Width="110"
-                                Content="Tìm kiếm"
-                                Style="{StaticResource ButtonPrimary}"
-                                Command="{Binding TimKiemCommand}" />
-                        <Button Width="110"
-                                Margin="8,0,0,0"
-                                Content="Làm mới"
+                        <!-- Grid 4 cột cho thông tin -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Hàng 1 -->
+                            <StackPanel Grid.Row="0" Grid.Column="0">
+                                <TextBlock FontWeight="SemiBold" FontSize="12" Text="Mã nguyên liệu" />
+                                <TextBlock Margin="0,4,0,0" FontSize="14" Text="{Binding SelectedNguyenLieu.NguyenLieuId}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="2">
+                                <TextBlock FontWeight="SemiBold" FontSize="12" Text="Tên nguyên liệu" />
+                                <TextBlock Margin="0,4,0,0" FontSize="14" TextWrapping="Wrap" Text="{Binding SelectedNguyenLieu.TenNguyenLieu}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="4">
+                                <TextBlock FontWeight="SemiBold" FontSize="12" Text="Đơn vị tính" />
+                                <TextBlock Margin="0,4,0,0" FontSize="14" Text="{Binding SelectedNguyenLieu.DonViTinh}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="6">
+                                <TextBlock FontWeight="SemiBold" FontSize="12" Text="Tồn kho hiện tại" />
+                                <TextBlock Margin="0,4,0,0" FontSize="14" Text="{Binding SelectedNguyenLieu.TonKhoHienThi}" />
+                            </StackPanel>
+
+                            <!-- Hàng 2 -->
+                            <StackPanel Grid.Row="2" Grid.Column="0">
+                                <TextBlock FontWeight="SemiBold" FontSize="12" Text="Tồn kho tối thiểu" />
+                                <TextBlock Margin="0,4,0,0" FontSize="14" Text="{Binding SelectedNguyenLieu.TonKhoToiThieu, StringFormat=N2}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="2" Grid.Column="2">
+                                <TextBlock FontWeight="SemiBold" FontSize="12" Text="Trạng thái tồn kho" />
+                                <TextBlock Margin="0,4,0,0" FontSize="14" FontWeight="SemiBold" Text="{Binding SelectedNguyenLieu.TrangThaiTonKhoHienThi}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedNguyenLieu.TrangThaiTonKhoHienThi}" Value="Hết hàng">
+                                                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SelectedNguyenLieu.TrangThaiTonKhoHienThi}" Value="Sắp hết">
+                                                    <Setter Property="Foreground" Value="#FF9800" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="2" Grid.Column="4">
+                                <TextBlock FontWeight="SemiBold" FontSize="12" Text="Đơn giá nhập" />
+                                <TextBlock Margin="0,4,0,0" FontSize="14" Text="{Binding SelectedNguyenLieu.DonGiaNhapHienThi}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="2" Grid.Column="6">
+                                <TextBlock FontWeight="SemiBold" FontSize="12" Text="Trạng thái hoạt động" />
+                                <TextBlock Margin="0,4,0,0" FontSize="14" FontWeight="SemiBold" Text="{Binding SelectedNguyenLieu.TrangThaiHoatDongHienThi}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedNguyenLieu.IsActive}" Value="False">
+                                                    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!-- Hàng 3 -->
+                            <StackPanel Grid.Row="4" Grid.Column="0">
+                                <TextBlock FontWeight="SemiBold" FontSize="12" Text="Ngày tạo" />
+                                <TextBlock Margin="0,4,0,0" FontSize="14" Text="{Binding SelectedNguyenLieu.CreatedAt, StringFormat=dd/MM/yyyy HH:mm:ss}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="4" Grid.Column="2">
+                                <TextBlock FontWeight="SemiBold" FontSize="12" Text="Ngày cập nhật" />
+                                <TextBlock Margin="0,4,0,0" FontSize="14" Text="{Binding SelectedNguyenLieu.UpdatedAt, StringFormat=dd/MM/yyyy HH:mm:ss, TargetNullValue='Chưa cập nhật'}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Button Margin="0,16,0,0"
+                                Width="120"
+                                HorizontalAlignment="Left"
+                                Content="Đóng"
                                 Style="{StaticResource ButtonSecondary}"
-                                Command="{Binding LamMoiCommand}" />
-                    </WrapPanel>
-                </StackPanel>
+                                Command="{Binding CloseDetailCommand}" />
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
         </Grid>
-
-        <Border Grid.Row="2" Style="{StaticResource CardPanel}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="10" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-
-                <TextBlock FontSize="18"
-                           FontWeight="SemiBold"
-                           Text="Danh sách nguyên liệu" />
-
-                <DataGrid Grid.Row="2"
-                          ItemsSource="{Binding NguyenLieus}"
-                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                          ScrollViewer.VerticalScrollBarVisibility="Auto">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Mã" Binding="{Binding NguyenLieuId}" Width="80" />
-                        <DataGridTextColumn Header="Tên nguyên liệu" Binding="{Binding TenNguyenLieu}" Width="2*" />
-                        <DataGridTextColumn Header="Đơn vị" Binding="{Binding DonViTinh}" Width="100" />
-                        <DataGridTextColumn Header="Tồn kho" Binding="{Binding TonKho, StringFormat=N2}" Width="120" />
-                        <DataGridTextColumn Header="Tồn tối thiểu" Binding="{Binding TonKhoToiThieu, StringFormat=N2}" Width="120" />
-                        <DataGridTemplateColumn Header="Trạng thái tồn" Width="120">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding TrangThaiTonKhoHienThi}" FontWeight="SemiBold">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding TrangThaiTonKhoHienThi}" Value="Hết hàng">
-                                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding TrangThaiTonKhoHienThi}" Value="Sắp hết">
-                                                        <Setter Property="Foreground" Value="#FF9800" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Đơn giá nhập" Binding="{Binding DonGiaNhap, StringFormat=N0}" Width="120" />
-                        <DataGridTextColumn Header="Ngày tạo" Binding="{Binding CreatedAt, StringFormat=dd/MM/yyyy HH:mm}" Width="160" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </Grid>
-        </Border>
-    </Grid>
+    </ScrollViewer>
 </UserControl>

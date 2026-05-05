@@ -6,18 +6,18 @@
              mc:Ignorable="d"
              d:DesignHeight="1300"
              d:DesignWidth="1250">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="0,0,0,12">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="12" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="12" />
-                <RowDefinition Height="300" />
+                <RowDefinition Height="260" />
                 <RowDefinition Height="12" />
-                <RowDefinition Height="300" />
+                <RowDefinition Height="360" />
                 <RowDefinition Height="12" />
-                <RowDefinition Height="300" />
+                <RowDefinition Height="400" />
             </Grid.RowDefinitions>
 
             <Border Style="{StaticResource CardPanel}">
@@ -113,20 +113,60 @@
                     <TextBlock Style="{StaticResource CardTitleText}" Text="Doanh thu theo hình thức thanh toán" />
                     <DataGrid Grid.Row="2"
                               ItemsSource="{Binding DoanhThuTheoHTTT}"
-                              MaxHeight="200"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              RowHeight="40"
+                              ColumnHeaderHeight="44"
+                              EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
-                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                              >
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="Padding" Value="10,0" />
+                                <Setter Property="BorderThickness" Value="0" />
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.CellStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Hình thức" Binding="{Binding HinhThucThanhToan}" Width="*" />
+                            <DataGridTextColumn Header="Hình thức" 
+                                                Binding="{Binding HinhThucThanhToan}" 
+                                                Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Margin" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                             <DataGridTextColumn Header="Số HĐ"
                                                 Binding="{Binding SoHoaDon}"
-                                                ElementStyle="{StaticResource RightAlignedCellText}"
-                                                Width="100" />
+                                                Width="100">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Margin" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                             <DataGridTextColumn Header="Doanh thu"
                                                 Binding="{Binding TongDoanhThu, StringFormat={}{0:N0} đ}"
-                                                ElementStyle="{StaticResource RightAlignedCellText}"
-                                                Width="180" />
+                                                Width="160">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Margin" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -148,28 +188,82 @@
                         </Grid.RowDefinitions>
 
                         <TextBlock Style="{StaticResource CardTitleText}" Text="Doanh thu theo ngày" />
-                        <DataGrid Grid.Row="2" ItemsSource="{Binding DoanhThuTheoNgay}"
+                        <DataGrid Grid.Row="2" 
+                                  ItemsSource="{Binding DoanhThuTheoNgay}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  IsReadOnly="True"
+                                  RowHeight="40"
+                                  ColumnHeaderHeight="44"
+                                  EnableRowVirtualization="True"
+                                  EnableColumnVirtualization="True"
                                   ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                  >
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                            <DataGrid.CellStyle>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="Padding" Value="10,0" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.CellStyle>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Ngày" Binding="{Binding Ngay, StringFormat=dd/MM/yyyy}" Width="120" />
+                                <DataGridTextColumn Header="Ngày" 
+                                                    Binding="{Binding Ngay, StringFormat=dd/MM/yyyy}" 
+                                                    Width="130">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="Số HĐ"
                                                     Binding="{Binding SoHoaDon}"
-                                                    ElementStyle="{StaticResource RightAlignedCellText}"
-                                                    Width="90" />
+                                                    Width="80">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="Doanh thu gộp"
                                                     Binding="{Binding DoanhThuGop, StringFormat={}{0:N0} đ}"
-                                                    ElementStyle="{StaticResource RightAlignedCellText}"
-                                                    Width="140" />
+                                                    Width="150">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="Giảm giá"
                                                     Binding="{Binding GiamGia, StringFormat={}{0:N0} đ}"
-                                                    ElementStyle="{StaticResource RightAlignedCellText}"
-                                                    Width="120" />
+                                                    Width="130">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="Doanh thu thuần"
                                                     Binding="{Binding DoanhThuThuan, StringFormat={}{0:N0} đ}"
-                                                    ElementStyle="{StaticResource RightAlignedCellText}"
-                                                    Width="150" />
+                                                    Width="160">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
@@ -184,25 +278,85 @@
                         </Grid.RowDefinitions>
 
                         <TextBlock Style="{StaticResource CardTitleText}" Text="Top 10 sản phẩm bán chạy" />
-                        <DataGrid Grid.Row="2" ItemsSource="{Binding TopSanPhamBanChay}"
+                        <DataGrid Grid.Row="2" 
+                                  ItemsSource="{Binding TopSanPhamBanChay}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  IsReadOnly="True"
+                                  RowHeight="40"
+                                  ColumnHeaderHeight="44"
+                                  EnableRowVirtualization="True"
+                                  EnableColumnVirtualization="True"
                                   ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                  >
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <DataGrid.CellStyle>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="Padding" Value="10,0" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.CellStyle>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Mã" Binding="{Binding MonId}" Width="70" />
-                                <DataGridTextColumn Header="Tên món" Binding="{Binding TenMon}" Width="100" />
+                                <DataGridTextColumn Header="Mã" 
+                                                    Binding="{Binding MonId}" 
+                                                    Width="70">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Tên món" 
+                                                    Binding="{Binding TenMon}" 
+                                                    Width="*"
+                                                    MinWidth="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                            <Setter Property="ToolTip" Value="{Binding TenMon}" />
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="SL bán"
                                                     Binding="{Binding TongSoLuongBan}"
-                                                    ElementStyle="{StaticResource RightAlignedCellText}"
-                                                    Width="90" />
+                                                    Width="80">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="Số HĐ"
                                                     Binding="{Binding SoHoaDon}"
-                                                    ElementStyle="{StaticResource RightAlignedCellText}"
-                                                    Width="90" />
+                                                    Width="80">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="Doanh thu"
                                                     Binding="{Binding TongDoanhThu, StringFormat={}{0:N0} đ}"
-                                                    ElementStyle="{StaticResource RightAlignedCellText}"
-                                                    Width="130" />
+                                                    Width="140">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="8,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
@@ -218,25 +372,82 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Style="{StaticResource CardTitleText}" Text="Danh sách hóa đơn bán" />
-                    <DataGrid Grid.Row="2" ItemsSource="{Binding DanhSachHoaDon}"
+                    <DataGrid Grid.Row="2" 
+                              ItemsSource="{Binding DanhSachHoaDon}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              RowHeight="40"
+                              ColumnHeaderHeight="44"
+                              EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
-                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                              >
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="Padding" Value="10,0" />
+                                <Setter Property="BorderThickness" Value="0" />
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.CellStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Mã HĐ" Binding="{Binding HoaDonBanId}" Width="80" />
-                            <DataGridTextColumn Header="Ngày bán" Binding="{Binding NgayBan, StringFormat=dd/MM/yyyy HH:mm}" Width="150" />
+                            <DataGridTextColumn Header="Mã HĐ" 
+                                                Binding="{Binding HoaDonBanId}" 
+                                                Width="80">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Margin" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Ngày bán" 
+                                                Binding="{Binding NgayBan, StringFormat=dd/MM/yyyy HH:mm}" 
+                                                Width="160">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Margin" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                             <DataGridTextColumn Header="Tổng tiền"
                                                 Binding="{Binding TongTien, StringFormat={}{0:N0} đ}"
-                                                ElementStyle="{StaticResource RightAlignedCellText}"
-                                                Width="130" />
+                                                Width="140">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Margin" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                             <DataGridTextColumn Header="Giảm giá"
                                                 Binding="{Binding GiamGia, StringFormat={}{0:N0} đ}"
-                                                ElementStyle="{StaticResource RightAlignedCellText}"
-                                                Width="120" />
+                                                Width="120">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Margin" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                             <DataGridTextColumn Header="Thanh toán"
                                                 Binding="{Binding ThanhToan, StringFormat={}{0:N0} đ}"
-                                                ElementStyle="{StaticResource RightAlignedCellText}"
-                                                Width="Auto" />
+                                                Width="140">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedCellText}">
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                        <Setter Property="Margin" Value="8,0" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

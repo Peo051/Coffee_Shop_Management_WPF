@@ -1,7 +1,12 @@
-﻿namespace CoffeeShop.Wpf.Models;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
-public sealed class MenuItemModel
+namespace CoffeeShop.Wpf.Models;
+
+public sealed class MenuItemModel : INotifyPropertyChanged
 {
+    private bool _isActive;
+
     public MenuItemModel(string code, string displayName)
     {
         Code = code;
@@ -15,35 +20,77 @@ public sealed class MenuItemModel
 
     public string GroupName { get; }
 
+    /// <summary>Trạng thái active của menu item</summary>
+    public bool IsActive
+    {
+        get => _isActive;
+        set
+        {
+            if (_isActive != value)
+            {
+                _isActive = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
     private static string ResolveGroupName(string code)
     {
         return code switch
         {
+            // Tổng quan
             "Dashboard" => "Tổng quan",
             "ThongKe" => "Tổng quan",
-            "BaoCao" => "Tổng quan",
-            "TopSanPhamBanChay" => "Tổng quan",
-            "HoaDonNhap" => "Nghiệp vụ",
-            "HoaDonBan" => "Nghiệp vụ",
-            "ExportPrint" => "Nghiệp vụ",
-            "LichSuHoaDon" => "Nghiệp vụ",
-            // Module Quản lý bàn đã bị gỡ
-            // "QuanLyBan" => "Vận hành",
+            
+            // Bán hàng
+            "HoaDonBan" => "Bán hàng",
+            "LichSuHoaDon" => "Bán hàng",
+            
+            // Báo cáo
+            "BaoCao" => "Báo cáo",
+            "TopSanPhamBanChay" => "Báo cáo",
+            "BaoCaoCaLam" => "Báo cáo",
+            "BaoCaoKho" => "Báo cáo",
+            
+            // Kho & Nhập hàng
+            "HoaDonNhap" => "Kho & Nhập hàng",
+            "NguyenLieu" => "Kho & Nhập hàng",
+            "CanhBaoTonKho" => "Kho & Nhập hàng",
+            "NhaCungCap" => "Kho & Nhập hàng",
+            
+            // Sản phẩm & Menu
+            "Mon" => "Sản phẩm & Menu",
+            "DanhMuc" => "Sản phẩm & Menu",
+            "CongThucMon" => "Sản phẩm & Menu",
+            "TrangThaiSanPham" => "Sản phẩm & Menu",
+            
+            // Khách hàng & Marketing
+            "KhachHang" => "Khách hàng & Marketing",
+            "KhuyenMai" => "Khách hàng & Marketing",
+            
+            // Vận hành
+            "PhaChe" => "Vận hành",
             "CaLamViec" => "Vận hành",
-            "TrangThaiSanPham" => "Vận hành",
-            "CanhBaoTonKho" => "Vận hành",
-            "TimKiemSanPham" => "Vận hành",
-            "DanhMuc" => "Danh mục",
-            "NhaCungCap" => "Danh mục",
-            "Mon" => "Danh mục",
-            "NguyenLieu" => "Danh mục",
-            "CongThucMon" => "Danh mục",
-            "KhuyenMai" => "Danh mục",
-            "KhachHang" => "Danh mục",
-            "QuanLyTaiKhoan" => "Quản trị",
-            "CauHinhHeThong" => "Quản trị",
-            "AuditLog" => "Quản trị",
+            
+            // Quản trị hệ thống
+            "QuanLyTaiKhoan" => "Quản trị hệ thống",
+            "CauHinhHeThong" => "Quản trị hệ thống",
+            "AuditLog" => "Quản trị hệ thống",
+            
+            // Tài khoản
             "DoiMatKhau" => "Tài khoản",
+            
+            // Deprecated - should not appear in new menu
+            "TimKiemSanPham" => "Khác",
+            "ExportPrint" => "Khác",
+            
             _ => "Khác"
         };
     }

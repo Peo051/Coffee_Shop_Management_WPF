@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:behaviors="clr-namespace:CoffeeShop.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DesignHeight="780"
              d:DesignWidth="1280">
@@ -22,7 +24,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
+                    <RowDefinition Height="600" />
                 </Grid.RowDefinitions>
 
                 <!-- Header + thông tin ca -->
@@ -242,7 +244,7 @@
                     
                     <!-- Danh sách kết quả tìm kiếm -->
                     <Border Margin="0,4,0,0"
-                            MaxHeight="200"
+                            MaxHeight="150"
                             Background="{DynamicResource CardBackgroundBrush}"
                             BorderBrush="{DynamicResource CardBorderBrush}"
                             BorderThickness="1"
@@ -403,13 +405,60 @@
                                                 </Button.Style>
                                             </Button>
 
-                                            <TextBlock Text="{Binding SoLuong}"
-                                                       VerticalAlignment="Center"
-                                                       HorizontalAlignment="Center"
-                                                       FontWeight="Bold"
-                                                       FontSize="13"
-                                                       Width="28"
-                                                       TextAlignment="Center" />
+                                            <!-- TextBox nhập số lượng trực tiếp với Behaviors -->
+                                            <TextBox Text="{Binding SoLuong, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                     Width="50"
+                                                     Height="28"
+                                                     Margin="2,0,2,0"
+                                                     Padding="4,2"
+                                                     FontSize="13"
+                                                     FontWeight="Bold"
+                                                     TextAlignment="Center"
+                                                     VerticalContentAlignment="Center"
+                                                     BorderThickness="2"
+                                                     Background="White"
+                                                     Focusable="True"
+                                                     IsTabStop="True"
+                                                     IsHitTestVisible="True"
+                                                     Cursor="IBeam"
+                                                     Panel.ZIndex="999"
+                                                     ToolTip="Click để nhập số lượng">
+                                                <TextBox.Style>
+                                                    <Style TargetType="TextBox">
+                                                        <Setter Property="BorderBrush" Value="#888888" />
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="TextBox">
+                                                                    <Border Background="{TemplateBinding Background}"
+                                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                                                            CornerRadius="4">
+                                                                        <ScrollViewer x:Name="PART_ContentHost"
+                                                                                      Focusable="False"
+                                                                                      HorizontalScrollBarVisibility="Hidden"
+                                                                                      VerticalScrollBarVisibility="Hidden" />
+                                                                    </Border>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                                                                <Setter Property="BorderThickness" Value="2" />
+                                                            </Trigger>
+                                                            <Trigger Property="IsFocused" Value="True">
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                                                                <Setter Property="BorderThickness" Value="2" />
+                                                                <Setter Property="Background" Value="#FFFEF5" />
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBox.Style>
+                                                <i:Interaction.Behaviors>
+                                                    <behaviors:NumericTextBoxBehavior />
+                                                    <behaviors:QuantityValidationBehavior />
+                                                </i:Interaction.Behaviors>
+                                            </TextBox>
 
                                             <Button Content="+"
                                                     Width="28" Height="26"
@@ -518,7 +567,7 @@
                                        FontSize="13"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource PrimaryBrush}" />
-                            
+
                             <!-- Hiển thị khi chưa chọn khách hàng -->
                             <TextBlock Margin="0,4,0,0"
                                        FontSize="11"
@@ -743,6 +792,34 @@
                         </Button.Style>
                     </Button>
 
+                    <!-- Nút Xác nhận thanh toán thủ công (cho QR/Chuyển khoản) -->
+                    <Button Content="✅ Xác Nhận Đã Thanh Toán"
+                            Margin="0,8,0,0"
+                            MinHeight="42"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Background="#28a745"
+                            Foreground="White"
+                            BorderBrush="#1e7e34"
+                            BorderThickness="2"
+                            Command="{Binding XacNhanThanhToanCommand}"
+                            ToolTip="Nhấn khi khách hàng đã chuyển khoản/thanh toán thành công (xác nhận thủ công)">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ButtonBase}">
+                                <Setter Property="Background" Value="#28a745" />
+                                <Setter Property="Foreground" Value="White" />
+                                <Setter Property="BorderBrush" Value="#1e7e34" />
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <!-- Hiển thị khi đã tạo hóa đơn -->
+                                    <DataTrigger Binding="{Binding HoaDonBanIdDaTao, Converter={StaticResource IntToBoolConverter}}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
                     <!-- Cảnh báo QR Payment -->
                     <TextBlock Margin="0,6,0,0"
                                FontSize="11"
@@ -813,7 +890,7 @@
                                            Height="200"
                                            Stretch="Uniform"
                                            HorizontalAlignment="Center" />
-                                    
+
                                     <!-- Fallback nếu QR không hiển thị -->
                                     <TextBlock Margin="0,4,0,0"
                                                FontSize="10"
@@ -822,7 +899,7 @@
                                                TextAlignment="Center"
                                                TextWrapping="Wrap"
                                                Text="(Nếu QR không hiển thị, dùng link bên dưới)" />
-                                    
+
                                     <!-- Trạng thái -->
                                     <TextBlock Margin="0,8,0,0"
                                                Text="{Binding PaymentStatusDisplay, Mode=OneWay}"
@@ -894,20 +971,24 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Grid.Style>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="8" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                
-                                <Button Grid.Column="0"
+
+                                <!-- Nút Kiểm tra và Hủy -->
+                                <Button Grid.Row="0" Grid.Column="0"
                                         Content="🔄 Kiểm Tra"
                                         MinHeight="36"
                                         FontSize="12"
                                         Style="{StaticResource ButtonSecondary}"
                                         Command="{Binding KiemTraTrangThaiThanhToanCommand}" />
-                                
-                                <Button Grid.Column="2"
+
+                                <Button Grid.Row="0" Grid.Column="2"
                                         Content="❌ Hủy QR"
                                         MinHeight="36"
                                         FontSize="12"
@@ -939,6 +1020,26 @@
                             </Border>
                         </StackPanel>
                     </Border>
+
+                    <!-- Nút In phiếu pha chế (hiển thị sau khi tạo hóa đơn thành công) -->
+                    <Button Content="🍹 In phiếu pha chế"
+                            Margin="0,8,0,0"
+                            MinHeight="38"
+                            FontSize="13"
+                            Command="{Binding InPhieuPhaCheCommand}"
+                            ToolTip="In phiếu pha chế cho quầy bar/bếp (không có giá tiền)">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ButtonPrimary}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <!-- Hiển thị khi đã tạo hóa đơn -->
+                                    <DataTrigger Binding="{Binding HoaDonBanIdDaTao, Converter={StaticResource IntToBoolConverter}}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
 
                     <!-- Nút phụ -->
                     <Grid Margin="0,4,0,0">

@@ -125,7 +125,7 @@
                       >
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Mã" Binding="{Binding KhuyenMaiId}" Width="70" />
-                        <DataGridTextColumn Header="Tên khuyến mãi" Binding="{Binding TenKhuyenMai}" Width="2*" />
+                        <DataGridTextColumn Header="Tên khuyến mãi" Binding="{Binding TenKhuyenMai}" Width="180" />
                         <DataGridTextColumn Header="Loại" Binding="{Binding LoaiKhuyenMaiHienThi}" Width="160" />
                         <DataGridTextColumn Header="Giá trị" Binding="{Binding GiaTri, StringFormat=N0}" Width="120" />
                         <DataGridTextColumn Header="Từ ngày" Binding="{Binding TuNgay, StringFormat=dd/MM/yyyy}" Width="120" />

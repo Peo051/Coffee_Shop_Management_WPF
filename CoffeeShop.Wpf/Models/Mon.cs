@@ -27,6 +27,11 @@ public sealed class Mon
     /// </summary>
     public int TonKhoToiThieu { get; set; }
 
+    /// <summary>
+    /// Mức cảnh báo tồn kho (dùng cho dashboard và báo cáo)
+    /// </summary>
+    public int MucCanhBaoTonKho { get; set; }
+
     public string? HinhAnhPath { get; set; }
 
     public bool IsActive { get; set; } = true;

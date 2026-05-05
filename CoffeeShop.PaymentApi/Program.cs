@@ -4,7 +4,12 @@ using CoffeeShop.PaymentApi.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // PayOS yêu cầu camelCase cho JSON
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 // Configure CORS để WPF client có thể gọi API
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost", "app://wpf" };
 builder.Services.AddCors(options =>

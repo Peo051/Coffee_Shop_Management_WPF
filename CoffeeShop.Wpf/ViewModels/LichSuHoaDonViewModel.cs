@@ -17,6 +17,7 @@ public sealed class LichSuHoaDonViewModel : BaseViewModel
     private readonly RelayCommand _xemChiTietCommand;
     private readonly RelayCommand _lamMoiCommand;
     private readonly RelayCommand _inHoaDonCommand;
+    private readonly RelayCommand _inPhieuPhaCheCommand;
     private readonly RelayCommand _huyHoaDonCommand;
 
     private DateTime _fromDate = DateTime.Today.AddDays(-7);
@@ -54,6 +55,7 @@ public sealed class LichSuHoaDonViewModel : BaseViewModel
         _xemChiTietCommand = new RelayCommand(ExecuteXemChiTiet, () => !IsBusy && SelectedHoaDon is not null);
         _lamMoiCommand = new RelayCommand(ExecuteLamMoi, () => !IsBusy);
         _inHoaDonCommand = new RelayCommand(ExecuteInHoaDon, () => !IsBusy && SelectedHoaDon is not null);
+        _inPhieuPhaCheCommand = new RelayCommand(ExecuteInPhieuPhaChe, () => !IsBusy && SelectedHoaDon is not null);
         _huyHoaDonCommand = new RelayCommand(ExecuteHuyHoaDon, () => !IsBusy && SelectedHoaDon is not null);
     }
 
@@ -153,6 +155,7 @@ public sealed class LichSuHoaDonViewModel : BaseViewModel
             {
                 _xemChiTietCommand.RaiseCanExecuteChanged();
                 _inHoaDonCommand.RaiseCanExecuteChanged();
+                _inPhieuPhaCheCommand.RaiseCanExecuteChanged();
                 _huyHoaDonCommand.RaiseCanExecuteChanged();
             }
         }
@@ -188,6 +191,7 @@ public sealed class LichSuHoaDonViewModel : BaseViewModel
                 _xemChiTietCommand.RaiseCanExecuteChanged();
                 _lamMoiCommand.RaiseCanExecuteChanged();
                 _inHoaDonCommand.RaiseCanExecuteChanged();
+                _inPhieuPhaCheCommand.RaiseCanExecuteChanged();
                 _huyHoaDonCommand.RaiseCanExecuteChanged();
             }
         }
@@ -197,6 +201,7 @@ public sealed class LichSuHoaDonViewModel : BaseViewModel
     public ICommand XemChiTietCommand => _xemChiTietCommand;
     public ICommand LamMoiCommand => _lamMoiCommand;
     public ICommand InHoaDonCommand => _inHoaDonCommand;
+    public ICommand InPhieuPhaCheCommand => _inPhieuPhaCheCommand;
     public ICommand HuyHoaDonCommand => _huyHoaDonCommand;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
@@ -236,6 +241,11 @@ public sealed class LichSuHoaDonViewModel : BaseViewModel
     private async void ExecuteInHoaDon()
     {
         await InHoaDonAsync();
+    }
+
+    private async void ExecuteInPhieuPhaChe()
+    {
+        await InPhieuPhaCheAsync();
     }
 
     private async void ExecuteHuyHoaDon()
@@ -370,6 +380,45 @@ public sealed class LichSuHoaDonViewModel : BaseViewModel
         catch (Exception ex)
         {
             ErrorMessage = $"Không thể in hóa đơn: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>In phiếu pha chế cho hóa đơn đang chọn</summary>
+    private async Task InPhieuPhaCheAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsBusy || SelectedHoaDon is null)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        try
+        {
+            var nguoiDungId = _sessionService.CurrentUser?.UserId;
+            var result = await _exportPrintService.InPhieuPhaCheAsync(
+                SelectedHoaDon.HoaDonBanId,
+                null,
+                nguoiDungId,
+                cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.Message;
+                return;
+            }
+
+            SuccessMessage = $"In phiếu pha chế #{SelectedHoaDon.HoaDonBanId} thành công. File: {result.Data}";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể in phiếu pha chế: {ex.Message}";
         }
         finally
         {

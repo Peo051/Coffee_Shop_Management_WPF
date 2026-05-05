@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="62a7100aecf640a8afdb05307e10399f" Name="Diagram1" ZoomLevel="58">
+        <EntityTypeShape EntityType="CoffeeShopDbModel.AuditLog" Width="1.5" PointX="12.75" PointY="8" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.Ban" Width="1.5" PointX="12.75" PointY="4" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.CaLamViec" Width="1.5" PointX="12.75" PointY="11.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.CauHinhHeThong" Width="1.5" PointX="8.375" PointY="5.25" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.CongThucMon" Width="1.5" PointX="23" PointY="18.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.ChiTietHoaDonBan" Width="1.5" PointX="20.25" PointY="13.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.ChiTietHoaDonNhap" Width="1.5" PointX="20" PointY="10.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.DanhMuc" Width="1.5" PointX="15.5" PointY="19.25" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.HoaDonBan" Width="1.5" PointX="15.125" PointY="7.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.HoaDonNhap" Width="1.5" PointX="17.75" PointY="9.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.KhachHang" Width="1.5" PointX="11.875" PointY="15.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.KhuVuc" Width="1.5" PointX="10.5" PointY="4.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.KhuyenMai" Width="1.5" PointX="12.875" PointY="19.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.LichSuNguyenLieu" Width="1.5" PointX="23" PointY="10.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.LichSuTonKho" Width="1.5" PointX="20" PointY="5.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.Mon" Width="1.5" PointX="17.75" PointY="18.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.NguoiDung" Width="1.5" PointX="10.5" PointY="9.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.NguyenLieu" Width="1.5" PointX="20.75" PointY="17.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.NhaCungCap" Width="1.5" PointX="15.5" PointY="3.25" IsExpanded="true" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.VaiTro" Width="1.5" PointX="8.25" PointY="10.5" IsExpanded="true" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_AuditLog_NguoiDung" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_Ban_KhuVuc" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_HoaDonBan_Ban" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_CaLamViec_NguoiDung" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_HoaDonBan_CaLamViec" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_CongThucMon_Mon" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_CongThucMon_NguyenLieu" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_ChiTietHoaDonBan_HoaDonBan" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_ChiTietHoaDonBan_Mon" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_ChiTietHoaDonNhap_HoaDonNhap" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_ChiTietHoaDonNhap_Mon" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_Mon_DanhMuc" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_HoaDonBan_KhachHang" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_HoaDonBan_KhuyenMai" ManuallyRouted="true" >
+          <ConnectorPoint PointX="14.34375" PointY="19.5" />
+          <ConnectorPoint PointX="14.34375" PointY="15.100698242187502" />
+          <ConnectorPoint PointX="15.125" PointY="15.100698242187502" />
+        </AssociationConnector>
+        <AssociationConnector Association="CoffeeShopDbModel.FK_HoaDonBan_NguoiDung" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_LichSuNguyenLieu_HoaDonBan" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_LichSuTonKho_HoaDonBan" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_HoaDonNhap_NguoiDung" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_HoaDonNhap_NhaCungCap" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_LichSuNguyenLieu_HoaDonNhap" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_LichSuTonKho_HoaDonNhap" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_KhuyenMai_Mon" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_LichSuNguyenLieu_NguoiDung" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_LichSuNguyenLieu_NguyenLieu" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_LichSuTonKho_Mon" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_LichSuTonKho_NguoiDung" ManuallyRouted="false" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_NguoiDung_VaiTro" ManuallyRouted="false" />
+        <EntityTypeShape EntityType="CoffeeShopDbModel.LichSuCapNhatCongThuc" Width="1.5" PointX="20" PointY="21.375" />
+        <AssociationConnector Association="CoffeeShopDbModel.FK_LichSuCapNhatCongThuc_Mon" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>
