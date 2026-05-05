@@ -189,9 +189,9 @@ ORDER BY ct.ChiTietHoaDonBanId;";
     /// <summary>
     /// Hủy hóa đơn hoàn chỉnh trong transaction:
     /// 1. Kiểm tra hóa đơn tồn tại và chưa hủy
-    /// 2. Đổi trạng thái = 'Đã hủy', ghi lý do, người hủy, ngày hủy
-    /// 3. Hoàn tồn kho theo chi tiết hóa đơn
-    /// 4. Trừ điểm khách hàng nếu trước đó đã cộng (không để âm)
+    /// 2. Nếu hóa đơn đã từng trừ kho (đã thanh toán) thì hoàn kho món + nguyên liệu và ghi lịch sử
+    /// 3. Đổi trạng thái = 'Đã hủy', ghi lý do, người hủy, ngày hủy
+    /// 4. Hoàn điểm khách hàng nếu trước đó đã cộng điểm
     /// </summary>
     public async Task<bool> HuyHoaDonAsync(
         int hoaDonBanId,
@@ -207,13 +207,14 @@ ORDER BY ct.ChiTietHoaDonBanId;";
         {
             // Bước 1: Kiểm tra hóa đơn tồn tại và chưa hủy, lấy thông tin cần thiết
             const string checkSql = @"
-SELECT HoaDonBanId, KhachHangId, DiemCong,
+SELECT HoaDonBanId, KhachHangId, DiemCong, CreatedByUserId,
        ISNULL(TrangThaiThanhToan, N'Đã thanh toán') AS TrangThaiThanhToan
-FROM dbo.HoaDonBan
+FROM dbo.HoaDonBan WITH (UPDLOCK, HOLDLOCK)
 WHERE HoaDonBanId = @HoaDonBanId;";
 
             int? khachHangId = null;
             int diemCong = 0;
+            int? createdByUserId = null;
             string trangThai;
 
             await using (var checkCmd = new SqlCommand(checkSql, connection, (SqlTransaction)transaction))
@@ -232,6 +233,9 @@ WHERE HoaDonBanId = @HoaDonBanId;";
                     ? null
                     : reader.GetInt32(reader.GetOrdinal("KhachHangId"));
                 diemCong = reader.GetInt32(reader.GetOrdinal("DiemCong"));
+                createdByUserId = reader.IsDBNull(reader.GetOrdinal("CreatedByUserId"))
+                    ? null
+                    : reader.GetInt32(reader.GetOrdinal("CreatedByUserId"));
             }
 
             // Đã hủy rồi thì không cho hủy lại
@@ -241,7 +245,155 @@ WHERE HoaDonBanId = @HoaDonBanId;";
                 return false;
             }
 
-            // Bước 2: Đổi trạng thái hóa đơn
+            var daTruKho = !string.Equals(trangThai, "Chờ thanh toán", StringComparison.OrdinalIgnoreCase)
+                           && !string.Equals(trangThai, "Cho thanh toan", StringComparison.OrdinalIgnoreCase);
+
+            // Bước 2: Hoàn kho (chỉ khi đã từng trừ kho)
+            if (daTruKho)
+            {
+                const string chiTietSql = @"
+SELECT ct.MonId, m.TenMon, ct.SoLuong
+FROM dbo.ChiTietHoaDonBan ct
+INNER JOIN dbo.Mon m ON m.MonId = ct.MonId
+WHERE ct.HoaDonBanId = @HoaDonBanId
+ORDER BY ct.ChiTietHoaDonBanId;";
+
+                var chiTiets = new List<(int MonId, string TenMon, int SoLuong)>();
+                await using (var chiTietCmd = new SqlCommand(chiTietSql, connection, (SqlTransaction)transaction))
+                {
+                    chiTietCmd.Parameters.AddWithValue("@HoaDonBanId", hoaDonBanId);
+                    await using var reader = await chiTietCmd.ExecuteReaderAsync(cancellationToken);
+                    while (await reader.ReadAsync(cancellationToken))
+                    {
+                        chiTiets.Add((
+                            reader.GetInt32(reader.GetOrdinal("MonId")),
+                            reader.GetString(reader.GetOrdinal("TenMon")),
+                            reader.GetInt32(reader.GetOrdinal("SoLuong"))));
+                    }
+                }
+
+                foreach (var chiTiet in chiTiets)
+                {
+                    const string getTonMonSql = @"SELECT TonKho FROM dbo.Mon WHERE MonId = @MonId;";
+                    int tonTruocMon;
+                    await using (var getTonMonCmd = new SqlCommand(getTonMonSql, connection, (SqlTransaction)transaction))
+                    {
+                        getTonMonCmd.Parameters.AddWithValue("@MonId", chiTiet.MonId);
+                        var tonObj = await getTonMonCmd.ExecuteScalarAsync(cancellationToken);
+                        tonTruocMon = tonObj is null ? 0 : Convert.ToInt32(tonObj);
+                    }
+
+                    var tonSauMon = tonTruocMon + chiTiet.SoLuong;
+
+                    const string updateMonSql = @"
+UPDATE dbo.Mon
+SET TonKho = TonKho + @SoLuongHoan
+WHERE MonId = @MonId;";
+                    await using (var updateMonCmd = new SqlCommand(updateMonSql, connection, (SqlTransaction)transaction))
+                    {
+                        updateMonCmd.Parameters.AddWithValue("@MonId", chiTiet.MonId);
+                        updateMonCmd.Parameters.AddWithValue("@SoLuongHoan", chiTiet.SoLuong);
+                        await updateMonCmd.ExecuteNonQueryAsync(cancellationToken);
+                    }
+
+                    const string insertLichSuTonKhoSql = @"
+INSERT INTO dbo.LichSuTonKho
+(
+    MonId, LoaiPhatSinh, SoLuongThayDoi, TonTruoc, TonSau, HoaDonBanId, HoaDonNhapId, GhiChu, NguoiDungId, ThoiGian
+)
+VALUES
+(
+    @MonId, N'HoanKhoHuyHoaDon', @SoLuongThayDoi, @TonTruoc, @TonSau, @HoaDonBanId, NULL, @GhiChu, @NguoiDungId, SYSDATETIME()
+);";
+                    await using (var lichSuMonCmd = new SqlCommand(insertLichSuTonKhoSql, connection, (SqlTransaction)transaction))
+                    {
+                        lichSuMonCmd.Parameters.AddWithValue("@MonId", chiTiet.MonId);
+                        lichSuMonCmd.Parameters.AddWithValue("@SoLuongThayDoi", chiTiet.SoLuong);
+                        lichSuMonCmd.Parameters.AddWithValue("@TonTruoc", tonTruocMon);
+                        lichSuMonCmd.Parameters.AddWithValue("@TonSau", tonSauMon);
+                        lichSuMonCmd.Parameters.AddWithValue("@HoaDonBanId", hoaDonBanId);
+                        lichSuMonCmd.Parameters.AddWithValue("@GhiChu", $"Hoàn kho do hủy hóa đơn #{hoaDonBanId}. Lý do: {lyDoHuy.Trim()}");
+                        lichSuMonCmd.Parameters.AddWithValue("@NguoiDungId", (object?)createdByUserId ?? DBNull.Value);
+                        await lichSuMonCmd.ExecuteNonQueryAsync(cancellationToken);
+                    }
+
+                    const string congThucSql = @"
+SELECT ct.NguyenLieuId,
+       nl.TenNguyenLieu,
+       nl.DonViTinh,
+       ct.DinhLuong
+FROM dbo.CongThucMon ct
+INNER JOIN dbo.NguyenLieu nl ON nl.NguyenLieuId = ct.NguyenLieuId
+WHERE ct.MonId = @MonId
+  AND ct.IsActive = 1;";
+
+                    var congThucs = new List<(int NguyenLieuId, string TenNguyenLieu, string DonViTinh, decimal DinhLuong)>();
+                    await using (var congThucCmd = new SqlCommand(congThucSql, connection, (SqlTransaction)transaction))
+                    {
+                        congThucCmd.Parameters.AddWithValue("@MonId", chiTiet.MonId);
+                        await using var reader = await congThucCmd.ExecuteReaderAsync(cancellationToken);
+                        while (await reader.ReadAsync(cancellationToken))
+                        {
+                            congThucs.Add((
+                                reader.GetInt32(reader.GetOrdinal("NguyenLieuId")),
+                                reader.GetString(reader.GetOrdinal("TenNguyenLieu")),
+                                reader.GetString(reader.GetOrdinal("DonViTinh")),
+                                reader.GetDecimal(reader.GetOrdinal("DinhLuong"))));
+                        }
+                    }
+
+                    foreach (var congThuc in congThucs)
+                    {
+                        var soLuongHoan = congThuc.DinhLuong * chiTiet.SoLuong;
+
+                        const string getTonNlSql = @"SELECT TonKho FROM dbo.NguyenLieu WHERE NguyenLieuId = @NguyenLieuId;";
+                        decimal tonTruocNl;
+                        await using (var getTonNlCmd = new SqlCommand(getTonNlSql, connection, (SqlTransaction)transaction))
+                        {
+                            getTonNlCmd.Parameters.AddWithValue("@NguyenLieuId", congThuc.NguyenLieuId);
+                            var tonObj = await getTonNlCmd.ExecuteScalarAsync(cancellationToken);
+                            tonTruocNl = tonObj is null ? 0 : Convert.ToDecimal(tonObj);
+                        }
+
+                        var tonSauNl = tonTruocNl + soLuongHoan;
+
+                        const string updateNlSql = @"
+UPDATE dbo.NguyenLieu
+SET TonKho = TonKho + @SoLuongHoan,
+    UpdatedAt = SYSDATETIME()
+WHERE NguyenLieuId = @NguyenLieuId;";
+                        await using (var updateNlCmd = new SqlCommand(updateNlSql, connection, (SqlTransaction)transaction))
+                        {
+                            updateNlCmd.Parameters.AddWithValue("@NguyenLieuId", congThuc.NguyenLieuId);
+                            updateNlCmd.Parameters.AddWithValue("@SoLuongHoan", soLuongHoan);
+                            await updateNlCmd.ExecuteNonQueryAsync(cancellationToken);
+                        }
+
+                        const string insertLichSuNlSql = @"
+INSERT INTO dbo.LichSuNguyenLieu
+(
+    NguyenLieuId, LoaiPhatSinh, SoLuongThayDoi, TonTruoc, TonSau, HoaDonBanId, HoaDonNhapId, GhiChu, NguoiDungId
+)
+VALUES
+(
+    @NguyenLieuId, N'HoanKhoHuyHoaDon', @SoLuongThayDoi, @TonTruoc, @TonSau, @HoaDonBanId, NULL, @GhiChu, @NguoiDungId
+);";
+                        await using (var lichSuNlCmd = new SqlCommand(insertLichSuNlSql, connection, (SqlTransaction)transaction))
+                        {
+                            lichSuNlCmd.Parameters.AddWithValue("@NguyenLieuId", congThuc.NguyenLieuId);
+                            lichSuNlCmd.Parameters.AddWithValue("@SoLuongThayDoi", soLuongHoan);
+                            lichSuNlCmd.Parameters.AddWithValue("@TonTruoc", tonTruocNl);
+                            lichSuNlCmd.Parameters.AddWithValue("@TonSau", tonSauNl);
+                            lichSuNlCmd.Parameters.AddWithValue("@HoaDonBanId", hoaDonBanId);
+                            lichSuNlCmd.Parameters.AddWithValue("@GhiChu", $"Hoàn kho nguyên liệu do hủy hóa đơn #{hoaDonBanId} cho món '{chiTiet.TenMon}'. Lý do: {lyDoHuy.Trim()}");
+                            lichSuNlCmd.Parameters.AddWithValue("@NguoiDungId", (object?)createdByUserId ?? DBNull.Value);
+                            await lichSuNlCmd.ExecuteNonQueryAsync(cancellationToken);
+                        }
+                    }
+                }
+            }
+
+            // Bước 3: Đổi trạng thái hóa đơn
             const string updateStatusSql = @"
 UPDATE dbo.HoaDonBan
 SET TrangThaiThanhToan = N'Đã hủy',
@@ -266,22 +418,8 @@ WHERE HoaDonBanId = @HoaDonBanId
                 }
             }
 
-            // Bước 3: Hoàn tồn kho theo chi tiết hóa đơn
-            const string restoreStockSql = @"
-UPDATE m
-SET m.TonKho = m.TonKho + ct.SoLuong
-FROM dbo.Mon m
-INNER JOIN dbo.ChiTietHoaDonBan ct ON ct.MonId = m.MonId
-WHERE ct.HoaDonBanId = @HoaDonBanId;";
-
-            await using (var restoreCmd = new SqlCommand(restoreStockSql, connection, (SqlTransaction)transaction))
-            {
-                restoreCmd.Parameters.AddWithValue("@HoaDonBanId", hoaDonBanId);
-                await restoreCmd.ExecuteNonQueryAsync(cancellationToken);
-            }
-
-            // Bước 4: Trừ điểm khách hàng nếu trước đó đã cộng (không để âm)
-            if (khachHangId.HasValue && diemCong > 0)
+            // Bước 4: Hoàn điểm khách hàng nếu trước đó đã cộng (chỉ khi từng trừ kho)
+            if (daTruKho && khachHangId.HasValue && diemCong > 0)
             {
                 const string deductPointsSql = @"
 UPDATE dbo.KhachHang

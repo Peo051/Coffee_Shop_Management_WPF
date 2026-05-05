@@ -76,12 +76,14 @@
 
                             <StackPanel Grid.Column="0">
                                 <TextBlock FontWeight="SemiBold" Text="Tồn kho nguyên liệu ban đầu" />
-                                <TextBox Margin="0,4,0,0" Text="{Binding TonKho, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox Margin="0,4,0,0"
+                                         Text="{Binding TonKho, UpdateSourceTrigger=PropertyChanged}"
+                                         IsEnabled="{Binding IsTonKhoEditable}" />
                                 <TextBlock Margin="0,3,0,0"
-                                           FontSize="11"
-                                           FontStyle="Italic"
-                                           Foreground="{DynamicResource MutedTextBrush}"
-                                           Text="Số lượng nguyên liệu thô (kg/lít/gram...)" />
+                                            FontSize="11"
+                                            FontStyle="Italic"
+                                            Foreground="{DynamicResource MutedTextBrush}"
+                                            Text="Chỉ nhập tồn kho ban đầu khi tạo mới. Điều chỉnh sau này dùng mục Điều chỉnh tồn kho bên phải." />
                             </StackPanel>
 
                             <StackPanel Grid.Column="2">
@@ -148,6 +150,55 @@
                                     Style="{StaticResource ButtonSecondary}"
                                     Command="{Binding LamMoiCommand}" />
                         </StackPanel>
+
+                        <Separator Margin="0,16,0,12" />
+                        <TextBlock FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Text="Nhập thêm / Điều chỉnh tồn kho" />
+                        <TextBlock Margin="0,6,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource MutedTextBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="Chọn một dòng trong bảng nguyên liệu để thực hiện nghiệp vụ tồn kho có ghi lịch sử." />
+
+                        <TextBlock Margin="0,10,0,0"
+                                   FontSize="12"
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource MutedTextBrush}"
+                                   Text="{Binding ThongTinNguyenLieuDangChon}" />
+
+                        <TextBlock Margin="0,10,0,4" FontWeight="SemiBold" Text="Số lượng nhập thêm" />
+                        <TextBox Text="{Binding SoLuongNhapThem, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Margin="0,8,0,4" FontWeight="SemiBold" Text="Đơn giá nhập mới (tùy chọn)" />
+                        <TextBox Text="{Binding DonGiaNhapMoi, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Margin="0,8,0,4" FontWeight="SemiBold" Text="Ghi chú nhập (tùy chọn)" />
+                        <TextBox Text="{Binding GhiChuNhapThem, UpdateSourceTrigger=PropertyChanged}"
+                                 MaxLength="500"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 MinHeight="48" />
+
+                        <Button Margin="0,10,0,0"
+                                Content="Nhập thêm nguyên liệu"
+                                Style="{StaticResource ButtonPrimary}"
+                                Command="{Binding NhapThemNguyenLieuCommand}" />
+
+                        <TextBlock Margin="0,12,0,4" FontWeight="SemiBold" Text="Tồn kho mới sau điều chỉnh" />
+                        <TextBox Text="{Binding TonKhoMoiDieuChinh, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Margin="0,8,0,4" FontWeight="SemiBold" Text="Lý do điều chỉnh (bắt buộc)" />
+                        <TextBox Text="{Binding LyDoDieuChinh, UpdateSourceTrigger=PropertyChanged}"
+                                 MaxLength="500"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 MinHeight="56" />
+
+                        <Button Margin="0,10,0,0"
+                                Content="Điều chỉnh tồn kho"
+                                Style="{StaticResource ButtonSecondary}"
+                                Command="{Binding DieuChinhTonKhoCommand}" />
                     </StackPanel>
                 </Border>
             </Grid>
@@ -171,6 +222,7 @@
                     <DataGrid Grid.Row="2"
                               Height="400"
                               ItemsSource="{Binding NguyenLieus}"
+                              SelectedItem="{Binding SelectedNguyenLieuTonKho, Mode=TwoWay}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               CanUserDeleteRows="False"
@@ -240,7 +292,7 @@
                             <DataGridTemplateColumn Header="Trạng thái" Width="110">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding TrangThaiTonKhoHienThi}" 
+                                        <TextBlock Text="{Binding TrangThaiTonKhoHienThi}"
                                                    FontWeight="SemiBold"
                                                    VerticalAlignment="Center"
                                                    Padding="8,0">

@@ -99,6 +99,69 @@ public sealed class KhoService : IKhoService
         return ServiceResult.Success("Cập nhật mức cảnh báo tồn kho thành công.");
     }
 
+    public async Task<ServiceResult> DieuChinhTonKhoMonAsync(
+        int monId,
+        int tonKhoMoi,
+        string lyDo,
+        string loaiPhatSinh,
+        CancellationToken cancellationToken = default)
+    {
+        if (monId <= 0)
+        {
+            return ServiceResult.Fail("Mã sản phẩm không hợp lệ.");
+        }
+
+        if (tonKhoMoi < 0)
+        {
+            return ServiceResult.Fail("Tồn kho sau điều chỉnh không được âm.");
+        }
+
+        if (string.IsNullOrWhiteSpace(lyDo))
+        {
+            return ServiceResult.Fail("Lý do điều chỉnh không được để trống.");
+        }
+
+        if (!string.Equals(loaiPhatSinh, "DieuChinh", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(loaiPhatSinh, "KiemKe", StringComparison.OrdinalIgnoreCase))
+        {
+            return ServiceResult.Fail("Loại điều chỉnh không hợp lệ.");
+        }
+
+        if (_khoRepository is not KhoRepository khoRepository)
+        {
+            return ServiceResult.Fail("Không thể điều chỉnh tồn kho do cấu hình repository không tương thích.");
+        }
+
+        try
+        {
+            var updated = await khoRepository.DieuChinhTonKhoVaGhiLichSuAsync(
+                monId,
+                tonKhoMoi,
+                lyDo,
+                loaiPhatSinh,
+                _sessionService.CurrentUser?.UserId,
+                cancellationToken);
+
+            if (updated is null)
+            {
+                return ServiceResult.Fail("Không tìm thấy sản phẩm để điều chỉnh tồn kho.");
+            }
+
+            _ = TryWriteAuditAsync(
+                "Điều chỉnh tồn kho món",
+                "Mon",
+                $"Món #{updated.MonId} ({updated.TenMon}) => Tồn kho mới: {updated.TonKho}; Loại: {loaiPhatSinh}; Lý do: {lyDo.Trim()}",
+                cancellationToken);
+
+            return ServiceResult.Success(
+                $"Đã cập nhật tồn kho sản phẩm '{updated.TenMon}' thành {updated.TonKho}.");
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail($"Không thể điều chỉnh tồn kho món: {ex.Message}");
+        }
+    }
+
     private async Task TryWriteAuditAsync(
         string hanhDong,
         string doiTuong,

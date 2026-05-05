@@ -477,7 +477,7 @@ public sealed class LichSuHoaDonViewModel : BaseViewModel
                 return;
             }
 
-            SuccessMessage = $"Hủy hóa đơn #{SelectedHoaDon.HoaDonBanId} thành công. Đã hoàn tồn kho và trừ điểm.";
+            SuccessMessage = $"Hủy hóa đơn #{SelectedHoaDon.HoaDonBanId} thành công.";
             LyDoHuy = string.Empty;
 
             // Tải lại danh sách

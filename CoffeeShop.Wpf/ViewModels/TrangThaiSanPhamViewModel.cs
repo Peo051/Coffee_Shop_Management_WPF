@@ -14,12 +14,16 @@ public sealed class TrangThaiSanPhamViewModel : BaseViewModel
     private readonly RelayCommand _lamMoiCommand;
     private readonly RelayCommand _khoaMoSanPhamCommand;
     private readonly RelayCommand _capNhatNguongCommand;
+    private readonly RelayCommand _dieuChinhTonKhoCommand;
 
     private string _tuKhoaTimKiem = string.Empty;
     private DanhMuc? _selectedDanhMucTimKiem;
     private TrangThaiFilterItem? _selectedTrangThaiTimKiem;
     private TrangThaiSanPhamDong? _selectedSanPham;
     private string _mucCanhBaoTonKhoInput = "10";
+    private string _tonKhoMoiInput = "0";
+    private string _lyDoDieuChinhTonKho = string.Empty;
+    private LoaiDieuChinhTonKhoItem? _selectedLoaiDieuChinhTonKho;
     private string _errorMessage = string.Empty;
     private string _successMessage = string.Empty;
     private bool _isBusy;
@@ -37,13 +41,20 @@ public sealed class TrangThaiSanPhamViewModel : BaseViewModel
             new("Đang kinh doanh", true),
             new("Ngừng kinh doanh", false)
         };
+        LoaiDieuChinhTonKhoItems = new ObservableCollection<LoaiDieuChinhTonKhoItem>
+        {
+            new("Điều chỉnh", "DieuChinh"),
+            new("Kiểm kê", "KiemKe")
+        };
 
         _selectedTrangThaiTimKiem = TrangThaiFilters[0];
+        _selectedLoaiDieuChinhTonKho = LoaiDieuChinhTonKhoItems[0];
 
         _timKiemCommand = new RelayCommand(ExecuteTimKiem, () => !IsBusy);
         _lamMoiCommand = new RelayCommand(ExecuteLamMoi, () => !IsBusy);
         _khoaMoSanPhamCommand = new RelayCommand(ExecuteKhoaMoSanPham, CanExecuteKhoaMoSanPham);
         _capNhatNguongCommand = new RelayCommand(ExecuteCapNhatNguong, CanExecuteCapNhatNguong);
+        _dieuChinhTonKhoCommand = new RelayCommand(ExecuteDieuChinhTonKho, CanExecuteDieuChinhTonKho);
     }
 
     public ObservableCollection<TrangThaiSanPhamDong> DanhSachSanPham { get; }
@@ -51,6 +62,8 @@ public sealed class TrangThaiSanPhamViewModel : BaseViewModel
     public ObservableCollection<DanhMuc> DanhMucs { get; }
 
     public ObservableCollection<TrangThaiFilterItem> TrangThaiFilters { get; }
+
+    public ObservableCollection<LoaiDieuChinhTonKhoItem> LoaiDieuChinhTonKhoItems { get; }
 
     public string TuKhoaTimKiem
     {
@@ -80,10 +93,12 @@ public sealed class TrangThaiSanPhamViewModel : BaseViewModel
                 if (value is not null)
                 {
                     MucCanhBaoTonKhoInput = value.MucCanhBaoTonKho.ToString();
+                    TonKhoMoiInput = value.TonKho.ToString();
                 }
 
                 _khoaMoSanPhamCommand.RaiseCanExecuteChanged();
                 _capNhatNguongCommand.RaiseCanExecuteChanged();
+                _dieuChinhTonKhoCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -96,6 +111,42 @@ public sealed class TrangThaiSanPhamViewModel : BaseViewModel
             if (SetProperty(ref _mucCanhBaoTonKhoInput, value))
             {
                 _capNhatNguongCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string TonKhoMoiInput
+    {
+        get => _tonKhoMoiInput;
+        set
+        {
+            if (SetProperty(ref _tonKhoMoiInput, value))
+            {
+                _dieuChinhTonKhoCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string LyDoDieuChinhTonKho
+    {
+        get => _lyDoDieuChinhTonKho;
+        set
+        {
+            if (SetProperty(ref _lyDoDieuChinhTonKho, value))
+            {
+                _dieuChinhTonKhoCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public LoaiDieuChinhTonKhoItem? SelectedLoaiDieuChinhTonKho
+    {
+        get => _selectedLoaiDieuChinhTonKho;
+        set
+        {
+            if (SetProperty(ref _selectedLoaiDieuChinhTonKho, value))
+            {
+                _dieuChinhTonKhoCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -123,6 +174,7 @@ public sealed class TrangThaiSanPhamViewModel : BaseViewModel
                 _lamMoiCommand.RaiseCanExecuteChanged();
                 _khoaMoSanPhamCommand.RaiseCanExecuteChanged();
                 _capNhatNguongCommand.RaiseCanExecuteChanged();
+                _dieuChinhTonKhoCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -134,6 +186,8 @@ public sealed class TrangThaiSanPhamViewModel : BaseViewModel
     public ICommand KhoaMoSanPhamCommand => _khoaMoSanPhamCommand;
 
     public ICommand CapNhatNguongCommand => _capNhatNguongCommand;
+
+    public ICommand DieuChinhTonKhoCommand => _dieuChinhTonKhoCommand;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -169,6 +223,15 @@ public sealed class TrangThaiSanPhamViewModel : BaseViewModel
     private bool CanExecuteCapNhatNguong()
     {
         return !IsBusy && SelectedSanPham is not null && !string.IsNullOrWhiteSpace(MucCanhBaoTonKhoInput);
+    }
+
+    private bool CanExecuteDieuChinhTonKho()
+    {
+        return !IsBusy
+               && SelectedSanPham is not null
+               && SelectedLoaiDieuChinhTonKho is not null
+               && !string.IsNullOrWhiteSpace(LyDoDieuChinhTonKho)
+               && !string.IsNullOrWhiteSpace(TonKhoMoiInput);
     }
 
     private async void ExecuteTimKiem()
@@ -262,6 +325,78 @@ public sealed class TrangThaiSanPhamViewModel : BaseViewModel
         }
     }
 
+    private async void ExecuteDieuChinhTonKho()
+    {
+        if (SelectedSanPham is null || IsBusy)
+        {
+            return;
+        }
+
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        if (!int.TryParse(TonKhoMoiInput, out var tonKhoMoi))
+        {
+            ErrorMessage = "Tồn kho mới phải là số nguyên.";
+            return;
+        }
+
+        if (tonKhoMoi < 0)
+        {
+            ErrorMessage = "Tồn kho sau điều chỉnh không được âm.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(LyDoDieuChinhTonKho))
+        {
+            ErrorMessage = "Lý do điều chỉnh không được để trống.";
+            return;
+        }
+
+        if (SelectedLoaiDieuChinhTonKho is null)
+        {
+            ErrorMessage = "Vui lòng chọn loại điều chỉnh.";
+            return;
+        }
+
+        if (_khoService is not KhoService khoService)
+        {
+            ErrorMessage = "Không thể điều chỉnh tồn kho do cấu hình service không tương thích.";
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var result = await khoService.DieuChinhTonKhoMonAsync(
+                SelectedSanPham.MonId,
+                tonKhoMoi,
+                LyDoDieuChinhTonKho,
+                SelectedLoaiDieuChinhTonKho.Value);
+
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.Message;
+                return;
+            }
+
+            var operationMessage = result.Message;
+            var selectedMonId = SelectedSanPham.MonId;
+            await TaiDanhSachAsyncCore();
+            SelectedSanPham = DanhSachSanPham.FirstOrDefault(x => x.MonId == selectedMonId);
+            LyDoDieuChinhTonKho = string.Empty;
+            SuccessMessage = operationMessage;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể điều chỉnh tồn kho: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     private async Task TaiDanhSachAsync(CancellationToken cancellationToken = default)
     {
         if (IsBusy)
@@ -347,4 +482,17 @@ public sealed class TrangThaiFilterItem
     public string DisplayName { get; }
 
     public bool? Value { get; }
+}
+
+public sealed class LoaiDieuChinhTonKhoItem
+{
+    public LoaiDieuChinhTonKhoItem(string displayName, string value)
+    {
+        DisplayName = displayName;
+        Value = value;
+    }
+
+    public string DisplayName { get; }
+
+    public string Value { get; }
 }

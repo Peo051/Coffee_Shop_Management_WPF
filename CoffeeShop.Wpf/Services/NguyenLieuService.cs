@@ -98,7 +98,6 @@ public sealed class NguyenLieuService : INguyenLieuService
 
             existing.TenNguyenLieu = tenNguyenLieu.Trim();
             existing.DonViTinh = donViTinh.Trim();
-            existing.TonKho = tonKho;
             existing.TonKhoToiThieu = tonKhoToiThieu;
             existing.DonGiaNhap = donGiaNhap;
 
@@ -112,31 +111,109 @@ public sealed class NguyenLieuService : INguyenLieuService
         }
     }
 
-    public async Task<ServiceResult> CapNhatTonKhoAsync(
+    public Task<ServiceResult> CapNhatTonKhoAsync(
         int nguyenLieuId,
         decimal tonKhoMoi,
         CancellationToken cancellationToken = default)
     {
-        if (tonKhoMoi < 0)
+        _ = nguyenLieuId;
+        _ = tonKhoMoi;
+        _ = cancellationToken;
+        return Task.FromResult(ServiceResult.Fail(
+            "Không cho phép cập nhật tồn kho trực tiếp. Vui lòng dùng chức năng nhập thêm hoặc điều chỉnh tồn kho có lý do."));
+    }
+
+    public async Task<ServiceResult> NhapThemNguyenLieuAsync(
+        int nguyenLieuId,
+        decimal soLuongNhap,
+        decimal? donGiaNhapMoi,
+        string? ghiChu,
+        int? nguoiDungId,
+        CancellationToken cancellationToken = default)
+    {
+        if (soLuongNhap <= 0)
         {
-            return ServiceResult.Fail("Tồn kho không được âm.");
+            return ServiceResult.Fail("Số lượng nhập phải lớn hơn 0.");
+        }
+
+        if (donGiaNhapMoi.HasValue && donGiaNhapMoi.Value < 0)
+        {
+            return ServiceResult.Fail("Đơn giá nhập không được âm.");
+        }
+
+        if (_nguyenLieuRepository is not NguyenLieuRepository nguyenLieuRepository)
+        {
+            return ServiceResult.Fail("Không thể thực hiện nhập nguyên liệu do cấu hình repository không tương thích.");
         }
 
         try
         {
-            var existing = await _nguyenLieuRepository.GetByIdAsync(nguyenLieuId, cancellationToken);
-            if (existing == null)
+            var updated = await nguyenLieuRepository.NhapThemVaGhiLichSuAsync(
+                nguyenLieuId,
+                soLuongNhap,
+                donGiaNhapMoi,
+                ghiChu,
+                nguoiDungId,
+                cancellationToken);
+
+            if (updated == null)
             {
                 return ServiceResult.Fail($"Không tìm thấy nguyên liệu với ID {nguyenLieuId}.");
             }
 
-            await _nguyenLieuRepository.CapNhatTonKhoAsync(nguyenLieuId, tonKhoMoi, cancellationToken);
-
-            return ServiceResult.Success($"Đã cập nhật tồn kho '{existing.TenNguyenLieu}' thành {tonKhoMoi:N2} {existing.DonViTinh}.");
+            return ServiceResult.Success(
+                $"Đã nhập thêm {soLuongNhap:N2} {updated.DonViTinh} cho nguyên liệu '{updated.TenNguyenLieu}'. Tồn hiện tại: {updated.TonKho:N2} {updated.DonViTinh}.");
         }
         catch (Exception ex)
         {
-            return ServiceResult.Fail($"Không thể cập nhật tồn kho: {ex.Message}");
+            return ServiceResult.Fail($"Không thể nhập thêm nguyên liệu: {ex.Message}");
+        }
+    }
+
+    public async Task<ServiceResult> DieuChinhTonKhoAsync(
+        int nguyenLieuId,
+        decimal tonKhoMoi,
+        string lyDo,
+        int? nguoiDungId,
+        string loaiPhatSinh = "DieuChinh",
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(lyDo))
+        {
+            return ServiceResult.Fail("Lý do điều chỉnh không được để trống.");
+        }
+
+        if (tonKhoMoi < 0)
+        {
+            return ServiceResult.Fail("Tồn kho sau điều chỉnh không được âm.");
+        }
+
+        if (_nguyenLieuRepository is not NguyenLieuRepository nguyenLieuRepository)
+        {
+            return ServiceResult.Fail("Không thể điều chỉnh tồn kho do cấu hình repository không tương thích.");
+        }
+
+        try
+        {
+            var updated = await nguyenLieuRepository.DieuChinhTonKhoVaGhiLichSuAsync(
+                nguyenLieuId,
+                tonKhoMoi,
+                lyDo,
+                nguoiDungId,
+                loaiPhatSinh,
+                cancellationToken);
+
+            if (updated == null)
+            {
+                return ServiceResult.Fail($"Không tìm thấy nguyên liệu với ID {nguyenLieuId}.");
+            }
+
+            return ServiceResult.Success(
+                $"Đã điều chỉnh tồn kho nguyên liệu '{updated.TenNguyenLieu}' thành {updated.TonKho:N2} {updated.DonViTinh}.");
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail($"Không thể điều chỉnh tồn kho nguyên liệu: {ex.Message}");
         }
     }
 
@@ -169,7 +246,7 @@ public sealed class NguyenLieuService : INguyenLieuService
         CancellationToken cancellationToken = default)
     {
         var allNguyenLieu = await _nguyenLieuRepository.SearchAsync(keyword, activeOnly: true, cancellationToken);
-        
+
         // Lọc nguyên liệu có TonKho <= TonKhoToiThieu và TonKhoToiThieu > 0
         return allNguyenLieu
             .Where(nl => nl.TonKhoToiThieu > 0 && nl.TonKho <= nl.TonKhoToiThieu)

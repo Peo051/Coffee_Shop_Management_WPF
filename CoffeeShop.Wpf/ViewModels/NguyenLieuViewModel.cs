@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using CoffeeShop.Wpf.Commands;
@@ -19,6 +20,8 @@ public sealed class NguyenLieuViewModel : BaseViewModel
     private readonly RelayCommand<NguyenLieu> _viewDetailCommand;
     private readonly RelayCommand _huyChinhSuaCommand;
     private readonly RelayCommand _closeDetailCommand;
+    private readonly RelayCommand _nhapThemNguyenLieuCommand;
+    private readonly RelayCommand _dieuChinhTonKhoCommand;
 
     private string _tenNguyenLieu = string.Empty;
     private string _donViTinh = string.Empty;
@@ -32,6 +35,12 @@ public sealed class NguyenLieuViewModel : BaseViewModel
     private bool _isEditing;
     private int _editingNguyenLieuId;
     private NguyenLieu? _selectedNguyenLieu;
+    private NguyenLieu? _selectedNguyenLieuTonKho;
+    private string _soLuongNhapThem = "0";
+    private string _donGiaNhapMoi = string.Empty;
+    private string _ghiChuNhapThem = string.Empty;
+    private string _tonKhoMoiDieuChinh = "0";
+    private string _lyDoDieuChinh = string.Empty;
     private bool _isDetailVisible;
 
     public NguyenLieuViewModel(INguyenLieuService nguyenLieuService)
@@ -48,6 +57,8 @@ public sealed class NguyenLieuViewModel : BaseViewModel
         _viewDetailCommand = new RelayCommand<NguyenLieu>(ExecuteViewDetail, _ => !IsBusy);
         _huyChinhSuaCommand = new RelayCommand(ExecuteHuyChinhSua, () => _isEditing);
         _closeDetailCommand = new RelayCommand(ExecuteCloseDetail);
+        _nhapThemNguyenLieuCommand = new RelayCommand(ExecuteNhapThemNguyenLieu, CanExecuteNhapThemNguyenLieu);
+        _dieuChinhTonKhoCommand = new RelayCommand(ExecuteDieuChinhTonKho, CanExecuteDieuChinhTonKho);
     }
 
     public ObservableCollection<NguyenLieu> NguyenLieus { get; }
@@ -143,6 +154,8 @@ public sealed class NguyenLieuViewModel : BaseViewModel
                 _editCommand.RaiseCanExecuteChanged();
                 _deleteCommand.RaiseCanExecuteChanged();
                 _viewDetailCommand.RaiseCanExecuteChanged();
+                _nhapThemNguyenLieuCommand.RaiseCanExecuteChanged();
+                _dieuChinhTonKhoCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -157,6 +170,7 @@ public sealed class NguyenLieuViewModel : BaseViewModel
                 _huyChinhSuaCommand.RaiseCanExecuteChanged();
                 OnPropertyChanged(nameof(FormTitle));
                 OnPropertyChanged(nameof(SubmitButtonText));
+                OnPropertyChanged(nameof(IsTonKhoEditable));
             }
         }
     }
@@ -165,6 +179,69 @@ public sealed class NguyenLieuViewModel : BaseViewModel
     {
         get => _selectedNguyenLieu;
         set => SetProperty(ref _selectedNguyenLieu, value);
+    }
+
+    public NguyenLieu? SelectedNguyenLieuTonKho
+    {
+        get => _selectedNguyenLieuTonKho;
+        set
+        {
+            if (SetProperty(ref _selectedNguyenLieuTonKho, value))
+            {
+                TonKhoMoiDieuChinh = value?.TonKho.ToString(CultureInfo.CurrentCulture) ?? "0";
+                OnPropertyChanged(nameof(ThongTinNguyenLieuDangChon));
+                _nhapThemNguyenLieuCommand.RaiseCanExecuteChanged();
+                _dieuChinhTonKhoCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string SoLuongNhapThem
+    {
+        get => _soLuongNhapThem;
+        set
+        {
+            if (SetProperty(ref _soLuongNhapThem, value))
+            {
+                _nhapThemNguyenLieuCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string DonGiaNhapMoi
+    {
+        get => _donGiaNhapMoi;
+        set => SetProperty(ref _donGiaNhapMoi, value);
+    }
+
+    public string GhiChuNhapThem
+    {
+        get => _ghiChuNhapThem;
+        set => SetProperty(ref _ghiChuNhapThem, value);
+    }
+
+    public string TonKhoMoiDieuChinh
+    {
+        get => _tonKhoMoiDieuChinh;
+        set
+        {
+            if (SetProperty(ref _tonKhoMoiDieuChinh, value))
+            {
+                _dieuChinhTonKhoCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string LyDoDieuChinh
+    {
+        get => _lyDoDieuChinh;
+        set
+        {
+            if (SetProperty(ref _lyDoDieuChinh, value))
+            {
+                _dieuChinhTonKhoCommand.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     public bool IsDetailVisible
@@ -176,6 +253,12 @@ public sealed class NguyenLieuViewModel : BaseViewModel
     public string FormTitle => IsEditing ? "Chỉnh sửa nguyên liệu" : "Quản lý nguyên liệu";
 
     public string SubmitButtonText => IsEditing ? "Cập nhật" : "Tạo mới";
+
+    public bool IsTonKhoEditable => !IsEditing;
+
+    public string ThongTinNguyenLieuDangChon => SelectedNguyenLieuTonKho == null
+        ? "Chưa chọn nguyên liệu."
+        : $"{SelectedNguyenLieuTonKho.TenNguyenLieu} (Tồn hiện tại: {SelectedNguyenLieuTonKho.TonKho:N2} {SelectedNguyenLieuTonKho.DonViTinh})";
 
     public ICommand TaoMoiCommand => _taoMoiCommand;
 
@@ -192,6 +275,10 @@ public sealed class NguyenLieuViewModel : BaseViewModel
     public ICommand HuyChinhSuaCommand => _huyChinhSuaCommand;
 
     public ICommand CloseDetailCommand => _closeDetailCommand;
+
+    public ICommand NhapThemNguyenLieuCommand => _nhapThemNguyenLieuCommand;
+
+    public ICommand DieuChinhTonKhoCommand => _dieuChinhTonKhoCommand;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -237,6 +324,184 @@ public sealed class NguyenLieuViewModel : BaseViewModel
         else
         {
             await TaoMoiAsync();
+        }
+    }
+
+    private bool CanExecuteNhapThemNguyenLieu()
+    {
+        return !IsBusy
+               && SelectedNguyenLieuTonKho != null
+               && TryParseDecimal(SoLuongNhapThem, out var soLuongNhap)
+               && soLuongNhap > 0;
+    }
+
+    private bool CanExecuteDieuChinhTonKho()
+    {
+        return !IsBusy
+               && SelectedNguyenLieuTonKho != null
+               && TryParseDecimal(TonKhoMoiDieuChinh, out _)
+               && !string.IsNullOrWhiteSpace(LyDoDieuChinh);
+    }
+
+    private async void ExecuteNhapThemNguyenLieu()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        if (SelectedNguyenLieuTonKho == null)
+        {
+            ErrorMessage = "Vui lòng chọn nguyên liệu cần nhập thêm.";
+            return;
+        }
+
+        if (!TryParseDecimal(SoLuongNhapThem, out var soLuongNhap))
+        {
+            ErrorMessage = "Số lượng nhập không hợp lệ.";
+            return;
+        }
+
+        if (soLuongNhap <= 0)
+        {
+            ErrorMessage = "Số lượng nhập phải lớn hơn 0.";
+            return;
+        }
+
+        decimal? donGiaNhapMoi = null;
+        if (!string.IsNullOrWhiteSpace(DonGiaNhapMoi))
+        {
+            if (!TryParseDecimal(DonGiaNhapMoi, out var parsedDonGia))
+            {
+                ErrorMessage = "Đơn giá nhập không hợp lệ.";
+                return;
+            }
+
+            if (parsedDonGia < 0)
+            {
+                ErrorMessage = "Đơn giá nhập không được âm.";
+                return;
+            }
+
+            donGiaNhapMoi = parsedDonGia;
+        }
+
+        if (_nguyenLieuService is not NguyenLieuService nguyenLieuService)
+        {
+            ErrorMessage = "Không thể thực hiện nhập nguyên liệu do cấu hình service không tương thích.";
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var result = await nguyenLieuService.NhapThemNguyenLieuAsync(
+                SelectedNguyenLieuTonKho.NguyenLieuId,
+                soLuongNhap,
+                donGiaNhapMoi,
+                GhiChuNhapThem,
+                null);
+
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.Message;
+                return;
+            }
+
+            var operationMessage = result.Message;
+            SoLuongNhapThem = "0";
+            DonGiaNhapMoi = string.Empty;
+            GhiChuNhapThem = string.Empty;
+            LyDoDieuChinh = string.Empty;
+
+            var selectedId = SelectedNguyenLieuTonKho.NguyenLieuId;
+            await LoadNguyenLieuAsync(TuKhoaTimKiem);
+            SelectedNguyenLieuTonKho = NguyenLieus.FirstOrDefault(x => x.NguyenLieuId == selectedId);
+            SuccessMessage = operationMessage;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể nhập thêm nguyên liệu: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async void ExecuteDieuChinhTonKho()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+
+        if (SelectedNguyenLieuTonKho == null)
+        {
+            ErrorMessage = "Vui lòng chọn nguyên liệu cần điều chỉnh.";
+            return;
+        }
+
+        if (!TryParseDecimal(TonKhoMoiDieuChinh, out var tonKhoMoi))
+        {
+            ErrorMessage = "Tồn kho mới không hợp lệ.";
+            return;
+        }
+
+        if (tonKhoMoi < 0)
+        {
+            ErrorMessage = "Tồn kho sau điều chỉnh không được âm.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(LyDoDieuChinh))
+        {
+            ErrorMessage = "Lý do điều chỉnh không được để trống.";
+            return;
+        }
+
+        if (_nguyenLieuService is not NguyenLieuService nguyenLieuService)
+        {
+            ErrorMessage = "Không thể thực hiện điều chỉnh do cấu hình service không tương thích.";
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var result = await nguyenLieuService.DieuChinhTonKhoAsync(
+                SelectedNguyenLieuTonKho.NguyenLieuId,
+                tonKhoMoi,
+                LyDoDieuChinh,
+                null);
+
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.Message;
+                return;
+            }
+
+            var operationMessage = result.Message;
+            LyDoDieuChinh = string.Empty;
+
+            var selectedId = SelectedNguyenLieuTonKho.NguyenLieuId;
+            await LoadNguyenLieuAsync(TuKhoaTimKiem);
+            SelectedNguyenLieuTonKho = NguyenLieus.FirstOrDefault(x => x.NguyenLieuId == selectedId);
+            SuccessMessage = operationMessage;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể điều chỉnh tồn kho nguyên liệu: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 

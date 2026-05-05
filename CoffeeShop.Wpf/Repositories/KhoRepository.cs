@@ -6,6 +6,8 @@ namespace CoffeeShop.Wpf.Repositories;
 
 public sealed class KhoRepository : IKhoRepository
 {
+    private readonly LichSuTonKhoRepository _lichSuTonKhoRepository = new();
+
     public async Task<IReadOnlyList<TrangThaiSanPhamDong>> GetTrangThaiSanPhamAsync(
         string? keyword,
         int? danhMucId,
@@ -143,6 +145,126 @@ WHERE MonId = @MonId;";
 
         var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
         return affectedRows > 0;
+    }
+
+    public async Task<TrangThaiSanPhamDong?> DieuChinhTonKhoVaGhiLichSuAsync(
+        int monId,
+        int tonKhoMoi,
+        string lyDo,
+        string loaiPhatSinh,
+        int? nguoiDungId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(DbConnectionFactory.ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            const string selectSql = @"
+SELECT TenMon, TonKho
+FROM dbo.Mon WITH (UPDLOCK, ROWLOCK)
+WHERE MonId = @MonId;";
+
+            int tonTruoc;
+
+            await using (var selectCommand = new SqlCommand(selectSql, connection, (SqlTransaction)transaction))
+            {
+                selectCommand.Parameters.AddWithValue("@MonId", monId);
+                await using var reader = await selectCommand.ExecuteReaderAsync(cancellationToken);
+                if (!await reader.ReadAsync(cancellationToken))
+                {
+                    throw new InvalidOperationException($"Không tìm thấy sản phẩm với mã {monId}.");
+                }
+
+                tonTruoc = reader.GetInt32(reader.GetOrdinal("TonKho"));
+            }
+
+            if (tonKhoMoi < 0)
+            {
+                throw new InvalidOperationException("Tồn kho sau điều chỉnh không được âm.");
+            }
+
+            const string updateSql = @"
+UPDATE dbo.Mon
+SET TonKho = @TonKhoMoi
+WHERE MonId = @MonId;";
+
+            await using (var updateCommand = new SqlCommand(updateSql, connection, (SqlTransaction)transaction))
+            {
+                updateCommand.Parameters.AddWithValue("@MonId", monId);
+                updateCommand.Parameters.AddWithValue("@TonKhoMoi", tonKhoMoi);
+                await updateCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            var soLuongThayDoi = tonKhoMoi - tonTruoc;
+            var ghiChu = $"[{loaiPhatSinh}] {lyDo.Trim()}";
+
+            await _lichSuTonKhoRepository.ThemLichSuAsync(
+                connection,
+                (SqlTransaction)transaction,
+                monId,
+                loaiPhatSinh,
+                soLuongThayDoi,
+                tonTruoc,
+                tonKhoMoi,
+                null,
+                null,
+                ghiChu,
+                nguoiDungId,
+                cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+
+            return await GetTrangThaiSanPhamByIdAsync(monId, cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    private static async Task<TrangThaiSanPhamDong?> GetTrangThaiSanPhamByIdAsync(
+        int monId,
+        CancellationToken cancellationToken)
+    {
+        const string sql = @"
+SELECT m.MonId,
+       m.TenMon,
+       m.DanhMucId,
+       dm.TenDanhMuc,
+       m.TonKho,
+       m.MucCanhBaoTonKho,
+       m.IsActive,
+       m.CreatedAt
+FROM dbo.Mon m
+INNER JOIN dbo.DanhMuc dm ON dm.DanhMucId = m.DanhMucId
+WHERE m.MonId = @MonId;";
+
+        await using var connection = new SqlConnection(DbConnectionFactory.ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@MonId", monId);
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return new TrangThaiSanPhamDong
+        {
+            MonId = reader.GetInt32(reader.GetOrdinal("MonId")),
+            TenMon = reader.GetString(reader.GetOrdinal("TenMon")),
+            DanhMucId = reader.GetInt32(reader.GetOrdinal("DanhMucId")),
+            TenDanhMuc = reader.GetString(reader.GetOrdinal("TenDanhMuc")),
+            TonKho = reader.GetInt32(reader.GetOrdinal("TonKho")),
+            MucCanhBaoTonKho = reader.GetInt32(reader.GetOrdinal("MucCanhBaoTonKho")),
+            IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+            CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
+        };
     }
 }
 

@@ -6,12 +6,14 @@ namespace CoffeeShop.Wpf.Repositories;
 
 public sealed class NguyenLieuRepository : INguyenLieuRepository
 {
+    private readonly LichSuNguyenLieuRepository _lichSuNguyenLieuRepository = new();
+
     public async Task<IReadOnlyList<NguyenLieu>> GetAllAsync(
         bool activeOnly = true,
         CancellationToken cancellationToken = default)
     {
         var sql = @"
-            SELECT 
+            SELECT
                 NguyenLieuId,
                 TenNguyenLieu,
                 DonViTinh,
@@ -50,7 +52,7 @@ public sealed class NguyenLieuRepository : INguyenLieuRepository
         CancellationToken cancellationToken = default)
     {
         const string sql = @"
-            SELECT 
+            SELECT
                 NguyenLieuId,
                 TenNguyenLieu,
                 DonViTinh,
@@ -85,7 +87,7 @@ public sealed class NguyenLieuRepository : INguyenLieuRepository
         CancellationToken cancellationToken = default)
     {
         var sql = @"
-            SELECT 
+            SELECT
                 NguyenLieuId,
                 TenNguyenLieu,
                 DonViTinh,
@@ -136,7 +138,7 @@ public sealed class NguyenLieuRepository : INguyenLieuRepository
         CancellationToken cancellationToken = default)
     {
         const string sql = @"
-            INSERT INTO dbo.NguyenLieu 
+            INSERT INTO dbo.NguyenLieu
             (
                 TenNguyenLieu,
                 DonViTinh,
@@ -146,7 +148,7 @@ public sealed class NguyenLieuRepository : INguyenLieuRepository
                 IsActive,
                 CreatedAt
             )
-            VALUES 
+            VALUES
             (
                 @TenNguyenLieu,
                 @DonViTinh,
@@ -179,10 +181,9 @@ public sealed class NguyenLieuRepository : INguyenLieuRepository
     {
         const string sql = @"
             UPDATE dbo.NguyenLieu
-            SET 
+            SET
                 TenNguyenLieu = @TenNguyenLieu,
                 DonViTinh = @DonViTinh,
-                TonKho = @TonKho,
                 TonKhoToiThieu = @TonKhoToiThieu,
                 DonGiaNhap = @DonGiaNhap,
                 IsActive = @IsActive,
@@ -196,7 +197,6 @@ public sealed class NguyenLieuRepository : INguyenLieuRepository
         cmd.Parameters.AddWithValue("@NguyenLieuId", nguyenLieu.NguyenLieuId);
         cmd.Parameters.AddWithValue("@TenNguyenLieu", nguyenLieu.TenNguyenLieu);
         cmd.Parameters.AddWithValue("@DonViTinh", nguyenLieu.DonViTinh);
-        cmd.Parameters.AddWithValue("@TonKho", nguyenLieu.TonKho);
         cmd.Parameters.AddWithValue("@TonKhoToiThieu", nguyenLieu.TonKhoToiThieu);
         cmd.Parameters.AddWithValue("@DonGiaNhap", nguyenLieu.DonGiaNhap);
         cmd.Parameters.AddWithValue("@IsActive", nguyenLieu.IsActive);
@@ -204,26 +204,145 @@ public sealed class NguyenLieuRepository : INguyenLieuRepository
         await cmd.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    public async Task CapNhatTonKhoAsync(
+    public Task CapNhatTonKhoAsync(
         int nguyenLieuId,
         decimal tonKhoMoi,
         CancellationToken cancellationToken = default)
     {
-        const string sql = @"
-            UPDATE dbo.NguyenLieu
-            SET 
-                TonKho = @TonKhoMoi,
-                UpdatedAt = SYSDATETIME()
-            WHERE NguyenLieuId = @NguyenLieuId;";
+        _ = nguyenLieuId;
+        _ = tonKhoMoi;
+        _ = cancellationToken;
+        throw new InvalidOperationException(
+            "Không cho phép cập nhật tồn kho trực tiếp. Vui lòng dùng nghiệp vụ nhập thêm hoặc điều chỉnh tồn kho có lý do.");
+    }
 
-        using var connection = new SqlConnection(DbConnectionFactory.ConnectionString);
+    public async Task<NguyenLieu?> NhapThemVaGhiLichSuAsync(
+        int nguyenLieuId,
+        decimal soLuongNhap,
+        decimal? donGiaNhapMoi,
+        string? ghiChu,
+        int? nguoiDungId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(DbConnectionFactory.ConnectionString);
         await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
-        using var cmd = new SqlCommand(sql, connection);
-        cmd.Parameters.AddWithValue("@NguyenLieuId", nguyenLieuId);
-        cmd.Parameters.AddWithValue("@TonKhoMoi", tonKhoMoi);
+        try
+        {
+            var snapshot = await GetNguyenLieuSnapshotAsync(connection, (SqlTransaction)transaction, nguyenLieuId, cancellationToken);
+            if (snapshot is null)
+            {
+                throw new InvalidOperationException($"Không tìm thấy nguyên liệu với ID {nguyenLieuId}.");
+            }
 
-        await cmd.ExecuteNonQueryAsync(cancellationToken);
+            var tonSau = snapshot.Value.TonKho + soLuongNhap;
+
+            const string updateSql = @"
+UPDATE dbo.NguyenLieu
+SET TonKho = @TonSau,
+    DonGiaNhap = ISNULL(@DonGiaNhapMoi, DonGiaNhap),
+    UpdatedAt = SYSDATETIME()
+WHERE NguyenLieuId = @NguyenLieuId;";
+
+            await using (var updateCmd = new SqlCommand(updateSql, connection, (SqlTransaction)transaction))
+            {
+                updateCmd.Parameters.AddWithValue("@NguyenLieuId", nguyenLieuId);
+                updateCmd.Parameters.AddWithValue("@TonSau", tonSau);
+                updateCmd.Parameters.AddWithValue("@DonGiaNhapMoi", (object?)donGiaNhapMoi ?? DBNull.Value);
+                await updateCmd.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            var noiDungGhiChu = string.IsNullOrWhiteSpace(ghiChu)
+                ? $"Nhập nguyên liệu {snapshot.Value.TenNguyenLieu}: +{soLuongNhap:N2} {snapshot.Value.DonViTinh}."
+                : $"Nhập nguyên liệu {snapshot.Value.TenNguyenLieu}: +{soLuongNhap:N2} {snapshot.Value.DonViTinh}. {ghiChu.Trim()}";
+
+            await _lichSuNguyenLieuRepository.ThemLichSuAsync(
+                connection,
+                (SqlTransaction)transaction,
+                nguyenLieuId,
+                "NhapNguyenLieu",
+                soLuongNhap,
+                snapshot.Value.TonKho,
+                tonSau,
+                null,
+                null,
+                noiDungGhiChu,
+                nguoiDungId,
+                cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+            return await GetByIdAsync(nguyenLieuId, cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    public async Task<NguyenLieu?> DieuChinhTonKhoVaGhiLichSuAsync(
+        int nguyenLieuId,
+        decimal tonKhoMoi,
+        string lyDo,
+        int? nguoiDungId,
+        string loaiPhatSinh = "DieuChinh",
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(DbConnectionFactory.ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var snapshot = await GetNguyenLieuSnapshotAsync(connection, (SqlTransaction)transaction, nguyenLieuId, cancellationToken);
+            if (snapshot is null)
+            {
+                throw new InvalidOperationException($"Không tìm thấy nguyên liệu với ID {nguyenLieuId}.");
+            }
+
+            if (tonKhoMoi < 0)
+            {
+                throw new InvalidOperationException("Tồn kho sau điều chỉnh không được âm.");
+            }
+
+            const string updateSql = @"
+UPDATE dbo.NguyenLieu
+SET TonKho = @TonKhoMoi,
+    UpdatedAt = SYSDATETIME()
+WHERE NguyenLieuId = @NguyenLieuId;";
+
+            await using (var updateCmd = new SqlCommand(updateSql, connection, (SqlTransaction)transaction))
+            {
+                updateCmd.Parameters.AddWithValue("@NguyenLieuId", nguyenLieuId);
+                updateCmd.Parameters.AddWithValue("@TonKhoMoi", tonKhoMoi);
+                await updateCmd.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            var soLuongThayDoi = tonKhoMoi - snapshot.Value.TonKho;
+
+            await _lichSuNguyenLieuRepository.ThemLichSuAsync(
+                connection,
+                (SqlTransaction)transaction,
+                nguyenLieuId,
+                loaiPhatSinh,
+                soLuongThayDoi,
+                snapshot.Value.TonKho,
+                tonKhoMoi,
+                null,
+                null,
+                lyDo.Trim(),
+                nguoiDungId,
+                cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+            return await GetByIdAsync(nguyenLieuId, cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     public async Task SetActiveAsync(
@@ -233,7 +352,7 @@ public sealed class NguyenLieuRepository : INguyenLieuRepository
     {
         const string sql = @"
             UPDATE dbo.NguyenLieu
-            SET 
+            SET
                 IsActive = @IsActive,
                 UpdatedAt = SYSDATETIME()
             WHERE NguyenLieuId = @NguyenLieuId;";
@@ -255,8 +374,8 @@ public sealed class NguyenLieuRepository : INguyenLieuRepository
         CancellationToken cancellationToken = default)
     {
         const string sql = @"
-            SELECT TonKho 
-            FROM dbo.NguyenLieu 
+            SELECT TonKho
+            FROM dbo.NguyenLieu
             WHERE NguyenLieuId = @NguyenLieuId;";
 
         await using var cmd = new SqlCommand(sql, connection, transaction);
@@ -275,7 +394,7 @@ public sealed class NguyenLieuRepository : INguyenLieuRepository
     {
         const string sql = @"
             UPDATE dbo.NguyenLieu
-            SET 
+            SET
                 TonKho = TonKho - @SoLuongTru,
                 UpdatedAt = SYSDATETIME()
             WHERE NguyenLieuId = @NguyenLieuId
@@ -286,6 +405,32 @@ public sealed class NguyenLieuRepository : INguyenLieuRepository
         cmd.Parameters.AddWithValue("@SoLuongTru", soLuongTru);
 
         return await cmd.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task<(string TenNguyenLieu, string DonViTinh, decimal TonKho)?> GetNguyenLieuSnapshotAsync(
+        SqlConnection connection,
+        SqlTransaction transaction,
+        int nguyenLieuId,
+        CancellationToken cancellationToken)
+    {
+        const string sql = @"
+SELECT TenNguyenLieu, DonViTinh, TonKho
+FROM dbo.NguyenLieu WITH (UPDLOCK, ROWLOCK)
+WHERE NguyenLieuId = @NguyenLieuId;";
+
+        await using var cmd = new SqlCommand(sql, connection, transaction);
+        cmd.Parameters.AddWithValue("@NguyenLieuId", nguyenLieuId);
+
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return (
+            reader.GetString(reader.GetOrdinal("TenNguyenLieu")),
+            reader.GetString(reader.GetOrdinal("DonViTinh")),
+            reader.GetDecimal(reader.GetOrdinal("TonKho")));
     }
 
     private static NguyenLieu MapNguyenLieu(SqlDataReader reader)
