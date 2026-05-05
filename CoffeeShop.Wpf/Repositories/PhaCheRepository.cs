@@ -33,7 +33,9 @@ ORDER BY hb.NgayBan ASC;";
         const string chiTietSql = @"
 SELECT ct.HoaDonBanId,
        m.TenMon,
-       ct.SoLuong
+       ct.SoLuong,
+       ct.KichCo,
+       ct.GhiChuMon
 FROM dbo.ChiTietHoaDonBan ct
 JOIN dbo.Mon m ON m.MonId = ct.MonId
 WHERE ct.HoaDonBanId IN (
@@ -88,13 +90,25 @@ ORDER BY ct.HoaDonBanId, ct.ChiTietHoaDonBanId;";
                 var hdId = reader.GetInt32(0);
                 var tenMon = reader.GetString(1);
                 var soLuong = reader.GetInt32(2);
+                var kichCo = reader.IsDBNull(3) ? "Mặc định" : reader.GetString(3);
+                var ghiChuMon = reader.IsDBNull(4) ? null : reader.GetString(4);
+
+                kichCo = string.IsNullOrWhiteSpace(kichCo) ? "Mặc định" : kichCo.Trim();
+                ghiChuMon = string.IsNullOrWhiteSpace(ghiChuMon) ? null : ghiChuMon.Trim();
 
                 if (!monMap.TryGetValue(hdId, out var list))
                 {
                     list = [];
                     monMap[hdId] = list;
                 }
-                list.Add($"{tenMon} x{soLuong}");
+
+                var monTomTat = $"{tenMon} ({kichCo}) x{soLuong}";
+                if (ghiChuMon is not null)
+                {
+                    monTomTat += $" - {ghiChuMon}";
+                }
+
+                list.Add(monTomTat);
             }
         }
 

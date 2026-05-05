@@ -94,5 +94,7 @@ desktop.ini
 !.gitignore
 
 =======
+.vscode
 .agents
 .fake
+.editorconfig
