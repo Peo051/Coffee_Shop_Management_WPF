@@ -16,6 +16,7 @@ public sealed class BaoCaoViewModel : BaseViewModel
     private readonly RelayCommand _xuatPdfCommand;
     private readonly RelayCommand _xuatPdfNangCaoCommand;
     private readonly RelayCommand _xuatExcelCommand;
+    private readonly RelayCommand _moCrystalReportCommand;
 
     private DateTime _fromDate = DateTime.Today.AddDays(-7);
     private DateTime _toDate = DateTime.Today;
@@ -43,6 +44,7 @@ public sealed class BaoCaoViewModel : BaseViewModel
         _xuatPdfCommand = new RelayCommand(ExecuteXuatPdf, () => !IsBusy);
         _xuatPdfNangCaoCommand = new RelayCommand(ExecuteXuatPdfNangCao, () => !IsBusy);
         _xuatExcelCommand = new RelayCommand(ExecuteXuatExcel, () => !IsBusy);
+        _moCrystalReportCommand = new RelayCommand(ExecuteMoCrystalReport);
     }
 
     public ObservableCollection<BaoCaoDonGianDong> BaoCaoDonGianRows { get; }
@@ -122,6 +124,13 @@ public sealed class BaoCaoViewModel : BaseViewModel
     public ICommand XuatPdfNangCaoCommand => _xuatPdfNangCaoCommand;
 
     public ICommand XuatExcelCommand => _xuatExcelCommand;
+
+    /// <summary>
+    /// Mở module Crystal Reports (project CoffeeShop.CrystalReports.Wpf, .NET Framework 4.8).
+    /// Module này tách project riêng vì project chính chạy .NET 8 không tương thích
+    /// với SAP Crystal Reports for Visual Studio.
+    /// </summary>
+    public ICommand MoCrystalReportCommand => _moCrystalReportCommand;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -302,5 +311,77 @@ public sealed class BaoCaoViewModel : BaseViewModel
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Mở module CoffeeShop.CrystalReports.Wpf bằng <see cref="System.Diagnostics.Process"/>.
+    /// Tìm exe theo đường dẫn tương đối (trong solution build chung output) trước,
+    /// nếu không thấy sẽ thông báo người dùng cần build project Crystal Reports.
+    /// </summary>
+    private void ExecuteMoCrystalReport()
+    {
+        try
+        {
+            var exePath = TimDuongDanCrystalReportExe();
+            if (string.IsNullOrEmpty(exePath))
+            {
+                ErrorMessage =
+                    "Chưa tìm thấy 'CoffeeShop.CrystalReports.Wpf.exe'. " +
+                    "Hãy mở Visual Studio, build project CoffeeShop.CrystalReports.Wpf (Debug | x86) trước.";
+                return;
+            }
+
+            var psi = new System.Diagnostics.ProcessStartInfo(exePath)
+            {
+                UseShellExecute = true,
+                WorkingDirectory = System.IO.Path.GetDirectoryName(exePath) ?? string.Empty
+            };
+            System.Diagnostics.Process.Start(psi);
+            SuccessMessage = "Đã mở module Báo cáo Crystal Reports.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không mở được Crystal Reports: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Tìm exe của module Crystal Reports trong cùng solution.
+    /// Bắt đầu từ thư mục chạy hiện tại, đi lên 5 cấp để tìm thư mục project anh em.
+    /// </summary>
+    private static string TimDuongDanCrystalReportExe()
+    {
+        const string exeName = "CoffeeShop.CrystalReports.Wpf.exe";
+        var searchRoots = new System.Collections.Generic.List<string>();
+
+        // 1) Lấy thư mục đang chạy của app chính rồi đi lên dần.
+        var dir = AppContext.BaseDirectory;
+        for (int i = 0; i < 6 && !string.IsNullOrEmpty(dir); i++)
+        {
+            searchRoots.Add(dir);
+            dir = System.IO.Path.GetDirectoryName(dir) ?? string.Empty;
+        }
+
+        // 2) Trong từng root, tìm theo các đường dẫn build chuẩn của .NET Framework 4.8.
+        var probePaths = new[]
+        {
+            System.IO.Path.Combine("CoffeeShop.CrystalReports.Wpf", "bin", "Debug", exeName),
+            System.IO.Path.Combine("CoffeeShop.CrystalReports.Wpf", "bin", "x86", "Debug", exeName),
+            System.IO.Path.Combine("CoffeeShop.CrystalReports.Wpf", "bin", "Release", exeName),
+            System.IO.Path.Combine("CoffeeShop.CrystalReports.Wpf", "bin", "x86", "Release", exeName)
+        };
+
+        foreach (var root in searchRoots)
+        {
+            foreach (var p in probePaths)
+            {
+                var full = System.IO.Path.Combine(root, p);
+                if (System.IO.File.Exists(full))
+                {
+                    return full;
+                }
+            }
+        }
+        return string.Empty;
     }
 }

@@ -77,6 +77,12 @@
                                     Command="{Binding XuatExcelCommand}"
                                     Style="{StaticResource ButtonPrimary}"
                                     ToolTip="Xuất dữ liệu thống kê ra file Excel" />
+                            <Button Width="220"
+                                    Margin="8,0,0,0"
+                                    Content="Báo cáo Crystal (doanh thu)"
+                                    Command="{Binding MoCrystalReportCommand}"
+                                    Style="{StaticResource ButtonSecondary}"
+                                    ToolTip="Mở module Crystal Reports để xem báo cáo doanh thu theo khoảng ngày" />
                         </WrapPanel>
                     </StackPanel>
                 </Border>

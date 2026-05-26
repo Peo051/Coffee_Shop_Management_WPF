@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Project WPF .NET Framework 4.8 dành riêng cho Crystal Reports.
+  Tách ra vì project chính (CoffeeShop.Wpf) đang dùng .NET 8.0-windows
+  nên không tương thích với SAP Crystal Reports for Visual Studio.
+
+  YÊU CẦU MÁY DEV:
+  1) Cài "SAP Crystal Reports, Developer version for Microsoft Visual Studio"
+     Link: https://www.crystalreports.com/crystal-reports-visual-studio-downloads/
+  2) Cài runtime "SAP Crystal Reports runtime engine for .NET Framework"
+     phù hợp với platform x86 hoặc x64 (đề nghị x86 cho ổn định).
+  3) Mở solution, build project này ở cấu hình Debug | x86.
+-->
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{8B2C9F7A-2A1F-4C9E-9C2F-1E3D5A1A1101}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>CoffeeShop.CrystalReports.Wpf</RootNamespace>
+    <AssemblyName>CoffeeShop.CrystalReports.Wpf</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <WarningLevel>4</WarningLevel>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <UseWPF>true</UseWPF>
+    <LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <!--
+    Reference các assembly Crystal Reports.
+    Sau khi cài "SAP Crystal Reports for Visual Studio", các DLL này
+    sẽ nằm ở GAC. Dùng dạng <Reference Include="..."> để VS tự resolve.
+  -->
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="WindowsFormsIntegration" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <!-- Crystal Reports Engine -->
+    <Reference Include="CrystalDecisions.CrystalReports.Engine, Version=13.0.4000.0, Culture=neutral, PublicKeyToken=692fbea5521e1304, processorArchitecture=MSIL">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="CrystalDecisions.Shared, Version=13.0.4000.0, Culture=neutral, PublicKeyToken=692fbea5521e1304, processorArchitecture=MSIL">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="CrystalDecisions.ReportSource, Version=13.0.4000.0, Culture=neutral, PublicKeyToken=692fbea5521e1304, processorArchitecture=MSIL">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="CrystalDecisions.ReportAppServer.ClientDoc, Version=13.0.4000.0, Culture=neutral, PublicKeyToken=692fbea5521e1304, processorArchitecture=MSIL">
+      <Private>False</Private>
+    </Reference>
+    <!-- WPF Viewer của Crystal Reports -->
+    <Reference Include="CrystalDecisions.Windows.Forms, Version=13.0.4000.0, Culture=neutral, PublicKeyToken=692fbea5521e1304, processorArchitecture=MSIL">
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Page Include="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\CrystalReportDoanhThuView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MainWindow.xaml.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Reports\CrystalDoanhThuTheoNgay.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>CrystalDoanhThuTheoNgay.rpt</DependentUpon>
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\CrystalReportDoanhThuView.xaml.cs">
+      <DependentUpon>CrystalReportDoanhThuView.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Infrastructure\AppConfig.cs" />
+    <Compile Include="Models\NhanVienItem.cs" />
+    <Compile Include="Models\DanhMucItem.cs" />
+    <Compile Include="Services\ICrystalReportService.cs" />
+    <Compile Include="Services\CrystalReportService.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+    <!-- File báo cáo Crystal Report.
+         File .rpt là file binary của Crystal Reports Designer.
+         AI không thể sinh trực tiếp, phải mở Visual Studio để tạo theo
+         hướng dẫn trong file Reports\HUONG_DAN_TAO_RPT.md.
+         Sau khi tạo, set Build Action = "Content" và Copy to Output Directory = "Copy always"
+         để code load file .rpt từ thư mục output. -->
+    <None Include="Reports\HUONG_DAN_TAO_RPT.md" />
+    <None Include="Reports\HUONG_DAN_FIX_LAYOUT_RPT.md" />
+    <None Include="Reports\SqlCommand_DoanhThu.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{C0C07587-41A7-46C8-8FBD-3F9C8EBE2DDC}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Reports\CrystalDoanhThuTheoNgay.rpt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildBinPath)\Microsoft.WinFx.targets" Condition="'$(TargetFrameworkVersion)' == 'v3.0' OR '$(TargetFrameworkVersion)' == 'v3.5'" />
+  <Target Name="CopyCrystalReportFiles" AfterTargets="Build" Condition="Exists('$(MSBuildProjectDirectory)\Reports\CrystalDoanhThuTheoNgay.rpt')">
+    <MakeDir Directories="$(TargetDir)Reports" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\Reports\CrystalDoanhThuTheoNgay.rpt"
+          DestinationFolder="$(TargetDir)Reports"
+          SkipUnchangedFiles="false" />
+  </Target>
+</Project>
