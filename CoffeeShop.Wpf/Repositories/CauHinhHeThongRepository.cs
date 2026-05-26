@@ -1,4 +1,4 @@
-﻿using CoffeeShop.Wpf.Infrastructure;
+using CoffeeShop.Wpf.Infrastructure;
 using CoffeeShop.Wpf.Models;
 using Microsoft.Data.SqlClient;
 
@@ -6,6 +6,26 @@ namespace CoffeeShop.Wpf.Repositories;
 
 public sealed class CauHinhHeThongRepository : ICauHinhHeThongRepository
 {
+    private async Task EnsurePayOsColumnsExistAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+        IF COL_LENGTH(N'dbo.CauHinhHeThong', N'PayOsClientId') IS NULL
+        BEGIN
+            ALTER TABLE dbo.CauHinhHeThong ADD PayOsClientId NVARCHAR(150) NULL;
+        END
+        IF COL_LENGTH(N'dbo.CauHinhHeThong', N'PayOsApiKey') IS NULL
+        BEGIN
+            ALTER TABLE dbo.CauHinhHeThong ADD PayOsApiKey NVARCHAR(150) NULL;
+        END
+        IF COL_LENGTH(N'dbo.CauHinhHeThong', N'PayOsChecksumKey') IS NULL
+        BEGIN
+            ALTER TABLE dbo.CauHinhHeThong ADD PayOsChecksumKey NVARCHAR(200) NULL;
+        END";
+
+        await using var command = new SqlCommand(sql, connection);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     public async Task<CauHinhHeThong?> GetCauHinhAsync(CancellationToken cancellationToken = default)
     {
         const string sql = @"
@@ -16,12 +36,16 @@ public sealed class CauHinhHeThongRepository : ICauHinhHeThongRepository
                SoDienThoai,
                FooterHoaDon,
                LogoPath,
+               PayOsClientId,
+               PayOsApiKey,
+               PayOsChecksumKey,
                UpdatedAt
         FROM dbo.CauHinhHeThong
         ORDER BY CauHinhHeThongId DESC;";
 
         await using var connection = new SqlConnection(DbConnectionFactory.ConnectionString);
         await connection.OpenAsync(cancellationToken);
+        await EnsurePayOsColumnsExistAsync(connection, cancellationToken);
 
         await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -37,6 +61,7 @@ public sealed class CauHinhHeThongRepository : ICauHinhHeThongRepository
     {
         await using var connection = new SqlConnection(DbConnectionFactory.ConnectionString);
         await connection.OpenAsync(cancellationToken);
+        await EnsurePayOsColumnsExistAsync(connection, cancellationToken);
 
         var current = await GetCauHinhAsync(cancellationToken);
 
@@ -50,6 +75,9 @@ INSERT INTO dbo.CauHinhHeThong
     SoDienThoai,
     FooterHoaDon,
     LogoPath,
+    PayOsClientId,
+    PayOsApiKey,
+    PayOsChecksumKey,
     UpdatedAt
 )
 VALUES
@@ -59,6 +87,9 @@ VALUES
     @SoDienThoai,
     @FooterHoaDon,
     @LogoPath,
+    @PayOsClientId,
+    @PayOsApiKey,
+    @PayOsChecksumKey,
     SYSDATETIME()
 );
 SELECT CAST(SCOPE_IDENTITY() AS INT);";
@@ -76,6 +107,9 @@ SET TenQuan = @TenQuan,
     SoDienThoai = @SoDienThoai,
     FooterHoaDon = @FooterHoaDon,
     LogoPath = @LogoPath,
+    PayOsClientId = @PayOsClientId,
+    PayOsApiKey = @PayOsApiKey,
+    PayOsChecksumKey = @PayOsChecksumKey,
     UpdatedAt = SYSDATETIME()
 WHERE CauHinhHeThongId = @CauHinhHeThongId;";
 
@@ -94,6 +128,9 @@ WHERE CauHinhHeThongId = @CauHinhHeThongId;";
         command.Parameters.AddWithValue("@SoDienThoai", string.IsNullOrWhiteSpace(cauHinh.SoDienThoai) ? DBNull.Value : cauHinh.SoDienThoai.Trim());
         command.Parameters.AddWithValue("@FooterHoaDon", string.IsNullOrWhiteSpace(cauHinh.FooterHoaDon) ? DBNull.Value : cauHinh.FooterHoaDon.Trim());
         command.Parameters.AddWithValue("@LogoPath", string.IsNullOrWhiteSpace(cauHinh.LogoPath) ? DBNull.Value : cauHinh.LogoPath.Trim());
+        command.Parameters.AddWithValue("@PayOsClientId", string.IsNullOrWhiteSpace(cauHinh.PayOsClientId) ? DBNull.Value : cauHinh.PayOsClientId.Trim());
+        command.Parameters.AddWithValue("@PayOsApiKey", string.IsNullOrWhiteSpace(cauHinh.PayOsApiKey) ? DBNull.Value : cauHinh.PayOsApiKey.Trim());
+        command.Parameters.AddWithValue("@PayOsChecksumKey", string.IsNullOrWhiteSpace(cauHinh.PayOsChecksumKey) ? DBNull.Value : cauHinh.PayOsChecksumKey.Trim());
     }
 
     private static CauHinhHeThong MapCauHinh(SqlDataReader reader)
@@ -106,6 +143,9 @@ WHERE CauHinhHeThongId = @CauHinhHeThongId;";
             SoDienThoai = reader.IsDBNull(reader.GetOrdinal("SoDienThoai")) ? null : reader.GetString(reader.GetOrdinal("SoDienThoai")),
             FooterHoaDon = reader.IsDBNull(reader.GetOrdinal("FooterHoaDon")) ? null : reader.GetString(reader.GetOrdinal("FooterHoaDon")),
             LogoPath = reader.IsDBNull(reader.GetOrdinal("LogoPath")) ? null : reader.GetString(reader.GetOrdinal("LogoPath")),
+            PayOsClientId = reader.IsDBNull(reader.GetOrdinal("PayOsClientId")) ? null : reader.GetString(reader.GetOrdinal("PayOsClientId")),
+            PayOsApiKey = reader.IsDBNull(reader.GetOrdinal("PayOsApiKey")) ? null : reader.GetString(reader.GetOrdinal("PayOsApiKey")),
+            PayOsChecksumKey = reader.IsDBNull(reader.GetOrdinal("PayOsChecksumKey")) ? null : reader.GetString(reader.GetOrdinal("PayOsChecksumKey")),
             UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt"))
         };
     }

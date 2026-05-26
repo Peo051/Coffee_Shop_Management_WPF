@@ -6,21 +6,46 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
-    <Grid Margin="12">
+    <Grid Margin="12,20,12,12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Tiêu đề -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,8">
-            <TextBlock Text="Báo cáo Crystal Report - Doanh thu theo khoảng ngày"
-                       FontSize="18"
-                       FontWeight="Bold" />
-            <TextBlock Foreground="Gray"
-                       Text="Chọn khoảng ngày, nhân viên (tùy chọn), danh mục (tùy chọn) rồi bấm 'Xem báo cáo'." />
-        </StackPanel>
+        <!-- Tiêu đề và nút thoát -->
+        <Grid Grid.Row="0" Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Báo cáo Crystal Report - Doanh thu theo khoảng ngày"
+                           FontSize="18"
+                           FontWeight="Bold" />
+                <TextBlock Foreground="Gray"
+                           Text="Chọn khoảng ngày, nhân viên (tùy chọn), danh mục (tùy chọn) rồi bấm 'Xem báo cáo'." />
+            </StackPanel>
+            
+            <Button Grid.Column="1"
+                    x:Name="btnThoat"
+                    Content="Thoát"
+                    Width="100"
+                    Height="32"
+                    Background="#FFD32F2F"
+                    Foreground="White"
+                    FontWeight="Bold"
+                    BorderThickness="0"
+                    Click="btnThoat_Click"
+                    VerticalAlignment="Center">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="4"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+        </Grid>
 
         <!-- Vùng tham số -->
         <Border Grid.Row="1"

@@ -1743,17 +1743,10 @@ public sealed class HoaDonBanViewModel : BaseViewModel
 
         try
         {
-            // Gọi API để xác nhận thanh toán thủ công (simulate webhook)
-            var testWebhookUrl = $"{_paymentApiClient.BaseUrl}/api/payments/test/confirm/{HoaDonBanIdDaTao}";
-            
-            using var httpClient = new System.Net.Http.HttpClient(new System.Net.Http.HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
-            });
+            // Gọi trực tiếp Client để xác nhận thanh toán thủ công (WPF local DB finalize)
+            var success = await _paymentApiClient.ConfirmPaymentManualAsync(HoaDonBanIdDaTao, cancellationToken);
 
-            var response = await httpClient.PostAsync(testWebhookUrl, null, cancellationToken);
-
-            if (response.IsSuccessStatusCode)
+            if (success)
             {
                 SuccessMessage = "✅ Đã xác nhận thanh toán thành công! Hóa đơn đang được xử lý...";
                 
@@ -1763,8 +1756,7 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             }
             else
             {
-                var error = await response.Content.ReadAsStringAsync(cancellationToken);
-                ErrorMessage = $"❌ Lỗi xác nhận thanh toán: {error}";
+                ErrorMessage = "❌ Không thể xác nhận thanh toán. Hóa đơn có thể đã được xử lý hoặc không đủ tồn kho.";
             }
         }
         catch (Exception ex)
@@ -1804,11 +1796,20 @@ public sealed class HoaDonBanViewModel : BaseViewModel
             if (qrCodeRaw.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 qrCodeRaw.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
-                // Load ảnh từ URL
+                // Tải ảnh qua HttpClient có tắt SSL check và thêm User-Agent để tránh bị server chặn
+                using var client = new System.Net.Http.HttpClient(new System.Net.Http.HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = (m, c, ch, e) => true
+                });
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+                
+                var bytes = client.GetByteArrayAsync(qrCodeRaw).GetAwaiter().GetResult();
+                
                 var bitmapImage = new BitmapImage();
+                using var httpStream = new MemoryStream(bytes);
                 bitmapImage.BeginInit();
-                bitmapImage.UriSource = new Uri(qrCodeRaw, UriKind.Absolute);
                 bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.StreamSource = httpStream;
                 bitmapImage.EndInit();
                 bitmapImage.Freeze();
                 

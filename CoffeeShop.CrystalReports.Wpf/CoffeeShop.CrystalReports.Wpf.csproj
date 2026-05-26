@@ -148,8 +148,6 @@
          hướng dẫn trong file Reports\HUONG_DAN_TAO_RPT.md.
          Sau khi tạo, set Build Action = "Content" và Copy to Output Directory = "Copy always"
          để code load file .rpt từ thư mục output. -->
-    <None Include="Reports\HUONG_DAN_TAO_RPT.md" />
-    <None Include="Reports\HUONG_DAN_FIX_LAYOUT_RPT.md" />
     <None Include="Reports\SqlCommand_DoanhThu.sql" />
   </ItemGroup>
   <ItemGroup>
@@ -164,8 +162,6 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.WinFx.targets" Condition="'$(TargetFrameworkVersion)' == 'v3.0' OR '$(TargetFrameworkVersion)' == 'v3.5'" />
   <Target Name="CopyCrystalReportFiles" AfterTargets="Build" Condition="Exists('$(MSBuildProjectDirectory)\Reports\CrystalDoanhThuTheoNgay.rpt')">
     <MakeDir Directories="$(TargetDir)Reports" />
-    <Copy SourceFiles="$(MSBuildProjectDirectory)\Reports\CrystalDoanhThuTheoNgay.rpt"
-          DestinationFolder="$(TargetDir)Reports"
-          SkipUnchangedFiles="false" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\Reports\CrystalDoanhThuTheoNgay.rpt" DestinationFolder="$(TargetDir)Reports" SkipUnchangedFiles="false" />
   </Target>
 </Project>

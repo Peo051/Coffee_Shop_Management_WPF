@@ -15,8 +15,9 @@
             <RowDefinition Height="12" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="12" />
-            <RowDefinition Height="500" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        
 
         <Border Style="{StaticResource CardPanel}">
             <StackPanel>
@@ -135,6 +136,89 @@
                 </TabItem>
                 <TabItem Header="Báo cáo sản phẩm">
                     <views:ReportNangCaoView />
+                </TabItem>
+                <TabItem Header="Báo cáo PDF (Xem trước)">
+                    <Grid Background="#F5F5F5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Thanh điều khiển và thông tin file -->
+                        <Border Grid.Row="0"
+                                Padding="10"
+                                Background="White"
+                                BorderBrush="#FFE0E0E0"
+                                BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Đường link lưu báo cáo và nút mở -->
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="Đường dẫn file: " FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#333333"/>
+                                    <TextBlock Text="{Binding FilePathPdf}"
+                                               VerticalAlignment="Center"
+                                               Margin="5,0,10,0"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxWidth="500"
+                                               Foreground="#FF1F6FEB" />
+                                    <Button Content="Mở File"
+                                            Command="{Binding MoFilePdfCommand}"
+                                            Style="{StaticResource ButtonSecondary}"
+                                            Height="26"
+                                            Padding="10,0"
+                                            Margin="0,0,5,0"
+                                            FontSize="11"/>
+                                    <Button Content="Mở thư mục chứa"
+                                            Command="{Binding MoThuMucPdfCommand}"
+                                            Style="{StaticResource ButtonSecondary}"
+                                            Height="26"
+                                            Padding="10,0"
+                                            FontSize="11"/>
+                                </StackPanel>
+
+                                <!-- Nút in ấn -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Button Content="In báo cáo"
+                                            Command="{Binding InPdfCommand}"
+                                            Style="{StaticResource ButtonPrimary}"
+                                            Background="#FF2E7D32"
+                                            Height="28"
+                                            Padding="15,0"
+                                            FontWeight="Bold"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Vùng hiển thị PDF -->
+                        <Grid Grid.Row="1" Margin="5">
+                            <!-- Hiển thị WebBrowser nếu có file PDF -->
+                            <WebBrowser x:Name="pdfWebViewer" Visibility="{Binding CoFilePdf, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            
+                            <!-- Thông báo nếu chưa có file PDF -->
+                            <Border Background="White"
+                                    BorderBrush="#FFE0E0E0"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Visibility="{Binding CoFilePdf, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="Chưa có báo cáo PDF được tải hoặc xuất."
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               Foreground="Gray"
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Vui lòng bấm 'Xuất PDF đơn giản' hoặc 'Xuất PDF nâng cao' ở trên để xem trước."
+                                               FontSize="12"
+                                               Foreground="DarkGray"
+                                               Margin="0,8,0,0"
+                                               HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
                 </TabItem>
             </TabControl>
         </Border>

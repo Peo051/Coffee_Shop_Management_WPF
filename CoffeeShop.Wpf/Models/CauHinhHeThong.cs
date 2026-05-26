@@ -1,4 +1,4 @@
-﻿namespace CoffeeShop.Wpf.Models;
+namespace CoffeeShop.Wpf.Models;
 
 public sealed class CauHinhHeThong
 {
@@ -13,6 +13,12 @@ public sealed class CauHinhHeThong
     public string? FooterHoaDon { get; set; }
 
     public string? LogoPath { get; set; }
+
+    public string? PayOsClientId { get; set; }
+
+    public string? PayOsApiKey { get; set; }
+
+    public string? PayOsChecksumKey { get; set; }
 
     public DateTime UpdatedAt { get; set; }
 }

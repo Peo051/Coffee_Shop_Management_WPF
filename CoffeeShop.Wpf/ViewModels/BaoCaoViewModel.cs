@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CoffeeShop.Wpf.Commands;
 using CoffeeShop.Wpf.Models;
@@ -17,6 +17,9 @@ public sealed class BaoCaoViewModel : BaseViewModel
     private readonly RelayCommand _xuatPdfNangCaoCommand;
     private readonly RelayCommand _xuatExcelCommand;
     private readonly RelayCommand _moCrystalReportCommand;
+    private readonly RelayCommand _inPdfCommand;
+    private readonly RelayCommand _moFilePdfCommand;
+    private readonly RelayCommand _moThuMucPdfCommand;
 
     private DateTime _fromDate = DateTime.Today.AddDays(-7);
     private DateTime _toDate = DateTime.Today;
@@ -29,6 +32,8 @@ public sealed class BaoCaoViewModel : BaseViewModel
     private string _errorMessage = string.Empty;
     private string _successMessage = string.Empty;
     private bool _isBusy;
+    private string _filePathPdf = string.Empty;
+    private bool _coFilePdf;
 
     public BaoCaoViewModel(IBaoCaoService baoCaoService, IExportPrintService exportPrintService, SessionService sessionService)
     {
@@ -45,6 +50,9 @@ public sealed class BaoCaoViewModel : BaseViewModel
         _xuatPdfNangCaoCommand = new RelayCommand(ExecuteXuatPdfNangCao, () => !IsBusy);
         _xuatExcelCommand = new RelayCommand(ExecuteXuatExcel, () => !IsBusy);
         _moCrystalReportCommand = new RelayCommand(ExecuteMoCrystalReport);
+        _inPdfCommand = new RelayCommand(ExecuteInPdf, () => CoFilePdf && !IsBusy);
+        _moFilePdfCommand = new RelayCommand(ExecuteMoFilePdf, () => CoFilePdf);
+        _moThuMucPdfCommand = new RelayCommand(ExecuteMoThuMucPdf, () => CoFilePdf);
     }
 
     public ObservableCollection<BaoCaoDonGianDong> BaoCaoDonGianRows { get; }
@@ -99,6 +107,32 @@ public sealed class BaoCaoViewModel : BaseViewModel
         private set => SetProperty(ref _successMessage, value);
     }
 
+    public string FilePathPdf
+    {
+        get => _filePathPdf;
+        set
+        {
+            if (SetProperty(ref _filePathPdf, value))
+            {
+                CoFilePdf = !string.IsNullOrEmpty(value);
+            }
+        }
+    }
+
+    public bool CoFilePdf
+    {
+        get => _coFilePdf;
+        private set
+        {
+            if (SetProperty(ref _coFilePdf, value))
+            {
+                _inPdfCommand.RaiseCanExecuteChanged();
+                _moFilePdfCommand.RaiseCanExecuteChanged();
+                _moThuMucPdfCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
     public bool IsBusy
     {
         get => _isBusy;
@@ -111,6 +145,7 @@ public sealed class BaoCaoViewModel : BaseViewModel
                 _xuatPdfCommand.RaiseCanExecuteChanged();
                 _xuatPdfNangCaoCommand.RaiseCanExecuteChanged();
                 _xuatExcelCommand.RaiseCanExecuteChanged();
+                _inPdfCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -124,6 +159,12 @@ public sealed class BaoCaoViewModel : BaseViewModel
     public ICommand XuatPdfNangCaoCommand => _xuatPdfNangCaoCommand;
 
     public ICommand XuatExcelCommand => _xuatExcelCommand;
+
+    public ICommand InPdfCommand => _inPdfCommand;
+
+    public ICommand MoFilePdfCommand => _moFilePdfCommand;
+
+    public ICommand MoThuMucPdfCommand => _moThuMucPdfCommand;
 
     /// <summary>
     /// Mở module Crystal Reports (project CoffeeShop.CrystalReports.Wpf, .NET Framework 4.8).
@@ -225,6 +266,7 @@ public sealed class BaoCaoViewModel : BaseViewModel
                 return;
             }
 
+            FilePathPdf = result.Data ?? string.Empty;
             SuccessMessage = $"Xuất PDF đơn giản thành công. File: {result.Data}";
         }
         catch (Exception ex)
@@ -263,6 +305,7 @@ public sealed class BaoCaoViewModel : BaseViewModel
                 return;
             }
 
+            FilePathPdf = result.Data ?? string.Empty;
             SuccessMessage = $"Xuất PDF nâng cao thành công. File: {result.Data}";
         }
         catch (Exception ex)
@@ -272,6 +315,75 @@ public sealed class BaoCaoViewModel : BaseViewModel
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private void ExecuteInPdf()
+    {
+        if (string.IsNullOrEmpty(FilePathPdf) || !System.IO.File.Exists(FilePathPdf))
+        {
+            ErrorMessage = "Không tìm thấy file PDF để in.";
+            return;
+        }
+
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = FilePathPdf,
+                Verb = "print",
+                CreateNoWindow = true,
+                UseShellExecute = true,
+                WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
+            };
+
+            using var process = System.Diagnostics.Process.Start(psi);
+            SuccessMessage = "Đã gửi lệnh in PDF tới máy in mặc định.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể in PDF: {ex.Message}";
+        }
+    }
+
+    private void ExecuteMoFilePdf()
+    {
+        if (string.IsNullOrEmpty(FilePathPdf) || !System.IO.File.Exists(FilePathPdf))
+        {
+            ErrorMessage = "Không tìm thấy file PDF.";
+            return;
+        }
+
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = FilePathPdf,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể mở file PDF: {ex.Message}";
+        }
+    }
+
+    private void ExecuteMoThuMucPdf()
+    {
+        if (string.IsNullOrEmpty(FilePathPdf) || !System.IO.File.Exists(FilePathPdf))
+        {
+            ErrorMessage = "Không tìm thấy file PDF.";
+            return;
+        }
+
+        try
+        {
+            string argument = $"/select, \"{FilePathPdf.Replace("/", "\\")}\"";
+            System.Diagnostics.Process.Start("explorer.exe", argument);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Không thể mở thư mục: {ex.Message}";
         }
     }
 

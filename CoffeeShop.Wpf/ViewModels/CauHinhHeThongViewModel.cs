@@ -1,4 +1,4 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 using CoffeeShop.Wpf.Commands;
 using CoffeeShop.Wpf.Models;
 using CoffeeShop.Wpf.Services;
@@ -16,6 +16,9 @@ public sealed class CauHinhHeThongViewModel : BaseViewModel
     private string _soDienThoai = string.Empty;
     private string _footerHoaDon = string.Empty;
     private string _logoPath = string.Empty;
+    private string _payOsClientId = string.Empty;
+    private string _payOsApiKey = string.Empty;
+    private string _payOsChecksumKey = string.Empty;
     private string _errorMessage = string.Empty;
     private string _successMessage = string.Empty;
     private bool _isBusy;
@@ -61,6 +64,24 @@ public sealed class CauHinhHeThongViewModel : BaseViewModel
     {
         get => _logoPath;
         set => SetProperty(ref _logoPath, value);
+    }
+
+    public string PayOsClientId
+    {
+        get => _payOsClientId;
+        set => SetProperty(ref _payOsClientId, value);
+    }
+
+    public string PayOsApiKey
+    {
+        get => _payOsApiKey;
+        set => SetProperty(ref _payOsApiKey, value);
+    }
+
+    public string PayOsChecksumKey
+    {
+        get => _payOsChecksumKey;
+        set => SetProperty(ref _payOsChecksumKey, value);
     }
 
     public string ErrorMessage
@@ -150,7 +171,10 @@ public sealed class CauHinhHeThongViewModel : BaseViewModel
                     DiaChi = DiaChi,
                     SoDienThoai = SoDienThoai,
                     FooterHoaDon = FooterHoaDon,
-                    LogoPath = LogoPath
+                    LogoPath = LogoPath,
+                    PayOsClientId = PayOsClientId,
+                    PayOsApiKey = PayOsApiKey,
+                    PayOsChecksumKey = PayOsChecksumKey
                 });
 
             if (!result.IsSuccess)
@@ -183,6 +207,9 @@ public sealed class CauHinhHeThongViewModel : BaseViewModel
         SoDienThoai = data.SoDienThoai ?? string.Empty;
         FooterHoaDon = data.FooterHoaDon ?? string.Empty;
         LogoPath = data.LogoPath ?? string.Empty;
+        PayOsClientId = data.PayOsClientId ?? string.Empty;
+        PayOsApiKey = data.PayOsApiKey ?? string.Empty;
+        PayOsChecksumKey = data.PayOsChecksumKey ?? string.Empty;
     }
 }
 

@@ -1,4 +1,4 @@
-﻿using CoffeeShop.Wpf.Models;
+using CoffeeShop.Wpf.Models;
 using CoffeeShop.Wpf.Repositories;
 
 namespace CoffeeShop.Wpf.Services;
@@ -55,6 +55,21 @@ public sealed class CauHinhHeThongService : ICauHinhHeThongService
         if (!string.IsNullOrWhiteSpace(cauHinh.FooterHoaDon) && cauHinh.FooterHoaDon.Trim().Length > 500)
         {
             return ServiceResult.Fail("Footer hóa đơn không được vượt quá 500 ký tự.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(cauHinh.PayOsClientId) && cauHinh.PayOsClientId.Trim().Length > 150)
+        {
+            return ServiceResult.Fail("PayOS Client ID không được vượt quá 150 ký tự.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(cauHinh.PayOsApiKey) && cauHinh.PayOsApiKey.Trim().Length > 150)
+        {
+            return ServiceResult.Fail("PayOS API Key không được vượt quá 150 ký tự.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(cauHinh.PayOsChecksumKey) && cauHinh.PayOsChecksumKey.Trim().Length > 200)
+        {
+            return ServiceResult.Fail("PayOS Checksum Key không được vượt quá 200 ký tự.");
         }
 
         await _cauHinhRepository.LuuCauHinhAsync(cauHinh, cancellationToken);

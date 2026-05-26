@@ -99,6 +99,12 @@ namespace CoffeeShop.CrystalReports.Wpf.Views
             cboDanhMuc.SelectedIndex = 0;
         }
 
+        private void btnThoat_Click(object sender, RoutedEventArgs e)
+        {
+            var window = Window.GetWindow(this);
+            window?.Close();
+        }
+
         private void btnXemBaoCao_Click(object sender, RoutedEventArgs e)
         {
             // 1) Validate tham số ngày.
@@ -279,7 +285,10 @@ namespace CoffeeShop.CrystalReports.Wpf.Views
 
             _crystalReportsViewer = new CrystalReportsWinFormsViewer
             {
-                Dock = System.Windows.Forms.DockStyle.Fill
+                Dock = System.Windows.Forms.DockStyle.Fill,
+                ToolPanelView = CrystalDecisions.Windows.Forms.ToolPanelViewType.None,
+                ShowGroupTreeButton = false,
+                ShowParameterPanelButton = false
             };
 
             _viewerHostControl = new WindowsFormsHost

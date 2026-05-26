@@ -38,7 +38,42 @@
                     <TextBlock Margin="0,8,0,0" FontWeight="SemiBold" Text="Đường dẫn logo (nếu có)" />
                     <TextBox Text="{Binding LogoPath, UpdateSourceTrigger=PropertyChanged}" MaxLength="500" />
 
-                    <WrapPanel Margin="0,14,0,0">
+                    <!-- Cấu hình tích hợp thanh toán PayOS -->
+                    <Border Margin="0,16,0,0" 
+                            Padding="16" 
+                            Background="#05000000" 
+                            BorderBrush="{DynamicResource CardBorderBrush}" 
+                            BorderThickness="1" 
+                            CornerRadius="8">
+                        <StackPanel>
+                            <TextBlock FontWeight="Bold" FontSize="14" Foreground="{DynamicResource PrimaryBrush}" Text="Cấu hình tích hợp thanh toán PayOS" />
+                            <TextBlock Margin="0,2,0,12" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" TextWrapping="Wrap" 
+                                       Text="Nhập thông tin kết nối từ tài khoản PayOS của bạn để liên kết thanh toán QR Code. Để trống nếu muốn dùng cấu hình mặc định trong file App.config hoặc VietQR offline." />
+                            
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock FontSize="12" FontWeight="SemiBold" Text="Client ID" />
+                                    <TextBox Text="{Binding PayOsClientId, UpdateSourceTrigger=PropertyChanged}" MaxLength="150" Margin="0,4,0,0" />
+                                </StackPanel>
+                                
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock FontSize="12" FontWeight="SemiBold" Text="API Key" />
+                                    <TextBox Text="{Binding PayOsApiKey, UpdateSourceTrigger=PropertyChanged}" MaxLength="150" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Margin="0,8,0,0" FontSize="12" FontWeight="SemiBold" Text="Checksum Key" />
+                            <TextBox Text="{Binding PayOsChecksumKey, UpdateSourceTrigger=PropertyChanged}" MaxLength="200" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <WrapPanel Margin="0,18,0,0">
                         <Button Width="130"
                             Content="Lưu cấu hình"
                             Style="{StaticResource ButtonPrimary}"

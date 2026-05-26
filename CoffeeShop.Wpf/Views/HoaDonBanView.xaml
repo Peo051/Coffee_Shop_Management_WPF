@@ -937,27 +937,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Nút tạo QR -->
-                            <Button Content="📱 Tạo QR Thanh Toán"
-                                    Margin="0,8,0,0"
-                                    MinHeight="38"
-                                    FontSize="13"
-                                    FontWeight="SemiBold"
-                                    Command="{Binding TaoQrThanhToanCommand}">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource ButtonPrimary}">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsWaitingQrPayment}" Value="True">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsPaymentPaid}" Value="True">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
+
 
                             <!-- Nút kiểm tra và hủy -->
                             <Grid Margin="0,6,0,0">
