@@ -39,18 +39,15 @@ public interface IExportPrintService
         int? nguoiDungId = null,
         CancellationToken cancellationToken = default);
 
-    /// <summary>
     /// Xem trước hóa đơn khách hàng (không in, chỉ mở file)
-    /// </summary>
     Task<ServiceResult<string>> PreviewHoaDonBanAsync(
         int hoaDonBanId,
         string? outputDirectory = null,
         int? nguoiDungId = null,
         CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// In phiếu pha chế cho nhân viên (không có giá tiền)
-    /// </summary>
+
+    /// In phiếu pha chế cho nhân viên
     Task<ServiceResult<string>> InPhieuPhaCheAsync(
         int hoaDonBanId,
         string? outputDirectory = null,

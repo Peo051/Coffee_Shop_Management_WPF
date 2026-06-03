@@ -1,18 +1,17 @@
+using System;
+using System.IO;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using CoffeeShop.Wpf.Models;
 
 namespace CoffeeShop.Wpf.Services;
-
-/// <summary>
-/// PDF Report Writer sử dụng QuestPDF để tạo báo cáo chuyên nghiệp với header, footer, và layout đẹp
-/// </summary>
+/// PDF Report Writer sử dụng QuestPDF để tạo báo cáo chuyên nghiệp với header, footer.
 internal static class PdfReportWriter
 {
     static PdfReportWriter()
     {
-        // Cấu hình QuestPDF cho mục đích học tập/phát triển
+        // Đăng ký giấy phép phiên bản cộng đồng (bắt buộc)
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
@@ -30,10 +29,11 @@ internal static class PdfReportWriter
             {
                 container.Page(page =>
                 {
+                    // 1. Cấu hình định dạng trang
                     page.Size(PageSizes.A4);
                     page.Margin(2, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Times New Roman"));
 
                     // Header
                     page.Header().Element(c => TaoHeader(c, cauHinh, "BÁO CÁO DOANH THU THEO NGÀY"));
@@ -117,9 +117,8 @@ internal static class PdfReportWriter
         }, cancellationToken);
     }
 
-    /// <summary>
-    /// Tạo PDF báo cáo nâng cao với header, footer chuyên nghiệp
-    /// </summary>
+
+    /// Tạo PDF báo cáo doanh thu sản phẩm với header, footer chuyên nghiệp
     public static async Task TaoBaoCaoNangCaoAsync(
         string outputPath,
         DateTime fromDate,
@@ -137,7 +136,7 @@ internal static class PdfReportWriter
                     page.Size(PageSizes.A4);
                     page.Margin(2, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Times New Roman"));
 
                     // Header
                     page.Header().Element(c => TaoHeader(c, cauHinh, "BÁO CÁO DOANH THU THEO SẢN PHẨM"));
@@ -231,9 +230,45 @@ internal static class PdfReportWriter
         }, cancellationToken);
     }
 
-    /// <summary>
+    /// Đọc dữ liệu ảnh Logo của quán (ưu tiên tệp cấu hình, dự phòng bằng Resource của ứng dụng)
+    private static byte[]? GetLogoBytes(string? logoPath)
+    {
+        try
+        {
+            // 1. Ưu tiên tải logo từ đường dẫn cấu hình
+            if (!string.IsNullOrWhiteSpace(logoPath))
+            {
+                var absolutePath = Path.IsPathRooted(logoPath)
+                    ? logoPath
+                    : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, logoPath);
+
+                if (File.Exists(absolutePath))
+                {
+                    return File.ReadAllBytes(absolutePath);
+                }
+            }
+
+            // 2. Dự phòng: Tải logo mặc định từ Resource của WPF
+            var resourceUri = new Uri("pack://application:,,,/CoffeeShop.Wpf;component/Resources/Images/logo.jpg");
+            var resourceInfo = System.Windows.Application.GetResourceStream(resourceUri);
+            if (resourceInfo != null)
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    resourceInfo.Stream.CopyTo(memoryStream);
+                    return memoryStream.ToArray();
+                }
+            }
+        }
+        catch
+        {
+            // Bỏ qua lỗi để không gây crash ứng dụng khi xuất báo cáo
+        }
+
+        return null;
+    }
+
     /// Tạo header chuyên nghiệp cho báo cáo
-    /// </summary>
     private static void TaoHeader(IContainer container, CauHinhHeThong? cauHinh, string tieuDe)
     {
         container.Column(column =>
@@ -241,6 +276,13 @@ internal static class PdfReportWriter
             // Logo và thông tin quán
             column.Item().Row(row =>
             {
+                // Thêm hình ảnh logo bên trái nếu có
+                var logoBytes = GetLogoBytes(cauHinh?.LogoPath);
+                if (logoBytes != null)
+                {
+                    row.ConstantItem(60).PaddingRight(10).AlignMiddle().Image(logoBytes);
+                }
+
                 row.RelativeItem().Column(col =>
                 {
                     col.Item().Text(cauHinh?.TenQuan ?? "COFFEE SHOP")
@@ -285,9 +327,8 @@ internal static class PdfReportWriter
         });
     }
 
-    /// <summary>
+
     /// Tạo footer chuyên nghiệp cho báo cáo
-    /// </summary>
     private static void TaoFooter(IContainer container, CauHinhHeThong? cauHinh)
     {
         container.Column(column =>

@@ -13,7 +13,7 @@ namespace CoffeeShop.CrystalReports.Wpf
         {
             base.OnStartup(e);
 
-            // Đọc connection string một lần lúc khởi động.
+            // Đọc cấu hình connection string một lần lúc khởi động.
             // Nếu thiếu sẽ ném lỗi rõ ràng để người dùng biết phải sửa App.config.
             try
             {

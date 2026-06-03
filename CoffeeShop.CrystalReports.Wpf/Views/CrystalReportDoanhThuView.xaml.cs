@@ -30,8 +30,8 @@ namespace CoffeeShop.CrystalReports.Wpf.Views
         private static readonly NhanVienItem AllNhanVien = new NhanVienItem { NguoiDungId = 0, HoTen = "-- Tất cả --" };
         private static readonly DanhMucItem AllDanhMuc = new DanhMucItem { DanhMucId = 0, TenDanhMuc = "-- Tất cả --" };
 
-        private readonly ICrystalReportService _service;
-        private WindowsFormsHost _viewerHostControl;
+        private readonly ICrystalReportService _service;    //Lấy dữ liệu từ database
+        private WindowsFormsHost _viewerHostControl;   //Nhúng WinForms control vào WPF 
         private CrystalReportsWinFormsViewer _crystalReportsViewer;
         private ReportDocument _currentReport;
 
@@ -139,7 +139,7 @@ namespace CoffeeShop.CrystalReports.Wpf.Views
             {
                 MessageBox.Show(
                     "Không tìm thấy file báo cáo .rpt.\n\n" + ex.Message +
-                    "\n\nTạo file Reports/CrystalDoanhThuTheoNgay.rpt theo hướng dẫn HUONG_DAN_TAO_RPT.md.",
+                    "\n\nTạo file Reports/CrystalDoanhThuTheoNgay.rpt",
                     "Thiếu file báo cáo",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
@@ -181,17 +181,14 @@ namespace CoffeeShop.CrystalReports.Wpf.Views
                 throw new FileNotFoundException("Không tìm thấy file .rpt. Đường dẫn đang tìm: " + rptPath, rptPath);
             }
 
-            // Tạo và load report từ file .rpt.
-            // Chú ý: nếu sinh viên đã thêm class .rpt strongly-typed
-            // thì có thể đổi thành: var rpt = new CrystalDoanhThuTheoNgay();
+            
             ReportDocument rpt = new ReportDocument();
-            rpt.Load(rptPath);
+            rpt.Load(rptPath);  //Load thiết kế báo cáo từ file .rpt
 
-            // Tự động căn chỉnh hướng trang Landscape, khổ A4 và tọa độ các cột để giao diện hiển thị đẹp nhất
+            // Tự động căn chỉnh hướng trang Landscape
             AdjustReportLayout(rpt);
 
-            // (a) Truyền data: lấy DataTable từ service rồi gán vào report.
-            //     Đây là phương án ổn định nhất và không phụ thuộc Crystal Command.
+            // lấy DataTable từ service rồi gán vào report.
             var dataTable = _service.LayDoanhThuTheoNgay(tuNgay, denNgay, maNhanVien, maDanhMuc);
             rpt.SetDataSource(dataTable);
 
@@ -219,8 +216,9 @@ namespace CoffeeShop.CrystalReports.Wpf.Views
             SetTextObjectValue(rpt, "Text28", "Khách / Bàn");
 
             // Ẩn các Summary Field gốc bằng cách đặt Width = 0 để tránh đè lấp hoặc hiển thị trống trơn
-            SetObjectLayout(rpt, "SumofSoLuong1", 0, 0);
-            SetObjectLayout(rpt, "SumofThanhTien1", 0, 0);
+            // Không ẩn Summary Field nữa vì report mới đang dùng Summary để hiển thị tổng.
+            SetObjectLayout(rpt, "SumofSoLuong1", 9800, 1800);
+            SetObjectLayout(rpt, "SumofThanhTien1", 9800, 1800);
 
             // (b) Set tham số TuNgay / DenNgay (Date).
             //     Nếu file .rpt có thêm Parameter MaNhanVien / MaDanhMuc,
@@ -230,8 +228,7 @@ namespace CoffeeShop.CrystalReports.Wpf.Views
             SetParameterIfExists(rpt, "MaNhanVien", maNhanVien.HasValue ? maNhanVien.Value : 0);
             SetParameterIfExists(rpt, "MaDanhMuc", maDanhMuc.HasValue ? maDanhMuc.Value : 0);
 
-            // Ghi đè công thức hiển thị khoảng ngày để tránh lỗi "This field name is not known"
-            // do thiếu parameter TuNgay/DenNgay trong file .rpt hoặc do map datasource làm mất parameter.
+            // hiển thị khoảng ngày để tránh lỗi 
             SetFormulaIfExists(rpt, "ReportPeriodText", $"\"Từ ngày: {tuNgay:dd/MM/yyyy} - Đến ngày: {denNgay:dd/MM/yyyy}\"");
 
             // (c) Cấu hình đăng nhập database cho mọi table trong report.
@@ -350,10 +347,11 @@ namespace CoffeeShop.CrystalReports.Wpf.Views
                 }
 
                 // 3) Căn chỉnh phần tổng kết ở Report Footer (Dịch sang trái, tăng rộng nhãn lên 4500 twips để tránh lỗi mất chữ T)
-                SetObjectLayout(rpt, "Text49", 7500, 4500);          // Nhãn "Tổng số lượng bán:"
-                SetObjectLayout(rpt, "SumofSoLuong1", 0, 0);         // Ẩn trường cũ
-                SetObjectLayout(rpt, "Text48", 7500, 4500);          // Nhãn "Tổng doanh thu:"
-                SetObjectLayout(rpt, "SumofThanhTien1", 0, 0);        // Ẩn trường cũ
+                SetObjectLayout(rpt, "Text49", 7500, 2500);
+                SetObjectLayout(rpt, "SumofSoLuong1", 9800, 1800);
+
+                SetObjectLayout(rpt, "Text48", 7500, 2500);
+                SetObjectLayout(rpt, "SumofThanhTien1", 9800, 1800);
 
                 // 4) Page Footer
                 SetObjectLayout(rpt, "PrintedAtField", 0, 5000);     // In lúc...

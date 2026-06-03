@@ -1,18 +1,34 @@
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Text;
-using CoffeeShop.Wpf.Models;
-using CoffeeShop.Wpf.Repositories;
+using System.Diagnostics;  // Để mở và in file
+using System.Globalization;  // Để format số theo chuẩn quốc tế
+using System.IO;  // Để thao tác với file
+using System.Text;  // Để xây dựng nội dung text
+using CoffeeShop.Wpf.Models;  // Chứa các model dữ liệu
+using CoffeeShop.Wpf.Repositories;  // Chứa repository để lấy dữ liệu từ database
 
 namespace CoffeeShop.Wpf.Services;
 
+/// <summary>
+/// Service chịu trách nhiệm:
+/// 1. Xuất báo cáo ra file PDF
+/// 2. Xuất thống kê ra file CSV (Excel)
+/// 3. In hóa đơn bán
+/// 4. Xem preview các báo cáo
+/// </summary>
 public sealed class ExportPrintService : IExportPrintService
 {
+    // Repository để lấy dữ liệu từ database
     private readonly IExportPrintRepository _exportPrintRepository;
+    
+    // Service để ghi log hành động người dùng
     private readonly IAuditLogService _auditLogService;
+    
+    // Service để lấy cấu hình hệ thống (tên quán, địa chỉ, SĐT...)
     private readonly ICauHinhHeThongService? _cauHinhHeThongService;
 
+    /// <summary>
+    /// Hàm khởi tạo ExportPrintService
+    /// Dependency Injection tự động truyền các service cần thiết vào đây
+    /// </summary>
     public ExportPrintService(
         IExportPrintRepository exportPrintRepository,
         IAuditLogService auditLogService,
@@ -23,6 +39,20 @@ public sealed class ExportPrintService : IExportPrintService
         _cauHinhHeThongService = cauHinhHeThongService;
     }
 
+    // ============================================
+    // PHẦN 1: XUẤT BÁO CÁO PDF
+    // ============================================
+
+    /// <summary>
+    /// HÀM XUẤT PDF BÁO CÁO ĐƠN GIẢN (THEO NGÀY)
+    /// Tạo file PDF báo cáo doanh thu theo từng ngày
+    /// </summary>
+    /// <param name="fromDate">Ngày bắt đầu</param>
+    /// <param name="toDate">Ngày kết thúc</param>
+    /// <param name="outputDirectory">Thư mục xuất file (null = dùng mặc định)</param>
+    /// <param name="nguoiDungId">ID người dùng để ghi log</param>
+    /// <param name="cancellationToken">Token để hủy bỏ tác vụ</param>
+    /// <returns>Đường dẫn file PDF đã tạo</returns>
     public async Task<ServiceResult<string>> XuatPdfBaoCaoDonGianAsync(
         DateTime fromDate,
         DateTime toDate,
@@ -30,19 +60,27 @@ public sealed class ExportPrintService : IExportPrintService
         int? nguoiDungId = null,
         CancellationToken cancellationToken = default)
     {
+        // BƯỚC 1: Kiểm tra khoảng thời gian hợp lệ
         var validation = ValidateDateRange(fromDate, toDate);
         if (!validation.IsSuccess)
         {
             return ServiceResult<string>.Fail(validation.Message);
         }
 
+        // BƯỚC 2: Lấy dữ liệu từ database
+        // Trả về danh sách báo cáo theo ngày: Ngày, Số HĐ, Tổng tiền, Giảm giá, DT thuần
         var rows = await _exportPrintRepository.GetDuLieuBaoCaoDonGianAsync(fromDate, toDate, cancellationToken);
-        var outputPath = BuildOutputPath(outputDirectory, "BaoCaoDonGian", "pdf");
+        
+        // BƯỚC 3: Tạo đường dẫn file output
+        // Ví dụ: D:\Exports\BaoCaoTheoNgay_20260602_143525.pdf
+        var outputPath = BuildOutputPath(outputDirectory, "BaoCaoTheoNgay", "pdf");
 
-        // Lấy cấu hình hệ thống cho header/footer
+        // BƯỚC 4: Lấy cấu hình hệ thống (tên quán, địa chỉ, SĐT)
+        // để hiển thị ở header của PDF
         var cauHinh = await GetCauHinhOrNullAsync(cancellationToken);
 
-        // Tạo PDF với header, footer chuyên nghiệp
+        // BƯỚC 5: Tạo file PDF chuyên nghiệp
+        // PdfReportWriter sẽ tạo PDF với bảng biểu, header, footer đẹp
         await PdfReportWriter.TaoBaoCaoDonGianAsync(
             outputPath,
             fromDate,
@@ -51,16 +89,22 @@ public sealed class ExportPrintService : IExportPrintService
             cauHinh,
             cancellationToken);
 
+        // BƯỚC 6: Ghi log audit (ai xuất, xuất gì, khi nào)
         await TryWriteAuditAsync(
             nguoiDungId,
             "Xuất PDF báo cáo theo ngày",
-            "BaoCao",
+            "BaoCaoTheoNgay",
             $"Từ {fromDate:dd/MM/yyyy} đến {toDate:dd/MM/yyyy}, số dòng: {rows.Count}",
             cancellationToken);
 
+        // BƯỚC 7: Trả về kết quả thành công
         return ServiceResult<string>.Success(outputPath, "Đã tạo file PDF thành công.");
     }
 
+    /// <summary>
+    /// HÀM XUẤT PDF BÁO CÁO NÂNG CAO (THEO SẢN PHẨM)
+    /// Tạo file PDF báo cáo doanh thu chi tiết theo từng món/sản phẩm
+    /// </summary>
     public async Task<ServiceResult<string>> XuatPdfBaoCaoNangCaoAsync(
         DateTime fromDate,
         DateTime toDate,
@@ -68,19 +112,23 @@ public sealed class ExportPrintService : IExportPrintService
         int? nguoiDungId = null,
         CancellationToken cancellationToken = default)
     {
+        // Kiểm tra khoảng ngày hợp lệ
         var validation = ValidateDateRange(fromDate, toDate);
         if (!validation.IsSuccess)
         {
             return ServiceResult<string>.Fail(validation.Message);
         }
 
+        // Lấy dữ liệu báo cáo nâng cao (theo sản phẩm) từ database
         var rows = await _exportPrintRepository.GetDuLieuBaoCaoNangCaoAsync(fromDate, toDate, cancellationToken);
-        var outputPath = BuildOutputPath(outputDirectory, "BaoCaoNangCao", "pdf");
+        
+        // Tạo đường dẫn file
+        var outputPath = BuildOutputPath(outputDirectory, "BaoCaoTheoSanPham", "pdf");
 
-        // Lấy cấu hình hệ thống cho header/footer
+        // Lấy cấu hình hệ thống
         var cauHinh = await GetCauHinhOrNullAsync(cancellationToken);
 
-        // Tạo PDF với header, footer chuyên nghiệp
+        // Tạo PDF với bảng chi tiết theo sản phẩm
         await PdfReportWriter.TaoBaoCaoNangCaoAsync(
             outputPath,
             fromDate,
@@ -89,16 +137,26 @@ public sealed class ExportPrintService : IExportPrintService
             cauHinh,
             cancellationToken);
 
+        // Ghi log hành động
         await TryWriteAuditAsync(
             nguoiDungId,
             "Xuất PDF báo cáo doanh thu theo sản phẩm",
-            "BaoCao",
+            "BaoCaoTheoSanPham",
             $"Từ {fromDate:dd/MM/yyyy} đến {toDate:dd/MM/yyyy}, số dòng: {rows.Count}",
             cancellationToken);
 
         return ServiceResult<string>.Success(outputPath, "Đã tạo file PDF thành công.");
     }
 
+    // ============================================
+    // PHẦN 2: XUẤT FILE CSV (EXCEL)
+    // ============================================
+
+    /// <summary>
+    /// HÀM XUẤT FILE CSV (CHO EXCEL)
+    /// Tạo file CSV chứa dữ liệu thống kê doanh thu theo ngày
+    /// File CSV có thể mở bằng Excel
+    /// </summary>
     public async Task<ServiceResult<string>> XuatCsvThongKeAsync(
         DateTime fromDate,
         DateTime toDate,
@@ -106,19 +164,29 @@ public sealed class ExportPrintService : IExportPrintService
         int? nguoiDungId = null,
         CancellationToken cancellationToken = default)
     {
+        // Kiểm tra khoảng ngày
         var validation = ValidateDateRange(fromDate, toDate);
         if (!validation.IsSuccess)
         {
             return ServiceResult<string>.Fail(validation.Message);
         }
 
+        // Lấy dữ liệu thống kê từ database
         var rows = await _exportPrintRepository.GetDuLieuThongKeDoanhThuAsync(fromDate, toDate, cancellationToken);
+        
+        // Tạo đường dẫn file CSV
         var outputPath = BuildOutputPath(outputDirectory, "ThongKeDoanhThu", "csv");
 
+        // XÂY DỰNG NỘI DUNG FILE CSV
         var csv = new StringBuilder();
+        
+        // Dòng đầu tiên: Header (tên cột)
         csv.AppendLine("Ngay,SoHoaDon,DoanhThuGop,GiamGia,DoanhThuThuan");
+        
+        // Thêm từng dòng dữ liệu
         foreach (var row in rows)
         {
+            // Định dạng: yyyy-MM-dd,100,5000000,100000,4900000
             csv.Append(row.Ngay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             csv.Append(',');
             csv.Append(row.SoHoaDon);
@@ -131,8 +199,10 @@ public sealed class ExportPrintService : IExportPrintService
             csv.AppendLine();
         }
 
+        // Ghi nội dung ra file với encoding UTF-8 (có BOM để Excel hiển thị đúng tiếng Việt)
         await File.WriteAllTextAsync(outputPath, csv.ToString(), new UTF8Encoding(true), cancellationToken);
 
+        // Ghi log
         await TryWriteAuditAsync(
             nguoiDungId,
             "Xuất CSV thống kê",
@@ -310,13 +380,26 @@ public sealed class ExportPrintService : IExportPrintService
                 : "Không thể gửi lệnh in trực tiếp. Đã tạo file phiếu pha chế để in thủ công.");
     }
 
+    // ============================================
+    // PHẦN 3: PRIVATE HELPER METHODS
+    // Các hàm hỗ trợ được dùng chung
+    // ============================================
+
+    /// <summary>
+    /// HÀM KIỂM TRA KHOẢNG THỜI GIAN HỢP LỆ
+    /// Đảm bảo:
+    /// - Ngày bắt đầu không lớn hơn ngày kết thúc
+    /// - Khoảng thời gian không quá 366 ngày (1 năm)
+    /// </summary>
     private static ServiceResult ValidateDateRange(DateTime fromDate, DateTime toDate)
     {
+        // Kiểm tra thứ tự ngày
         if (fromDate.Date > toDate.Date)
         {
             return ServiceResult.Fail("Ngày bắt đầu không được lớn hơn ngày kết thúc.");
         }
 
+        // Kiểm tra khoảng thời gian tối đa
         if ((toDate.Date - fromDate.Date).TotalDays > 366)
         {
             return ServiceResult.Fail("Khoảng thời gian tối đa là 366 ngày.");
@@ -325,13 +408,25 @@ public sealed class ExportPrintService : IExportPrintService
         return ServiceResult.Success();
     }
 
+    /// <summary>
+    /// HÀM TẠO ĐƯỜNG DẪN FILE OUTPUT
+    /// Tạo đường dẫn file với timestamp để tránh trùng lặp
+    /// Ví dụ: D:\Exports\BaoCaoTheoNgay_20260602_143525.pdf
+    /// </summary>
+    /// <param name="outputDirectory">Thư mục xuất (null = dùng thư mục Exports mặc định)</param>
+    /// <param name="prefix">Tiền tố tên file</param>
+    /// <param name="extension">Phần mở rộng (pdf, csv, txt)</param>
     private static string BuildOutputPath(string? outputDirectory, string prefix, string extension)
     {
+        // Xác định thư mục xuất
         var dir = string.IsNullOrWhiteSpace(outputDirectory)
-            ? Path.Combine(AppContext.BaseDirectory, "Exports")
+            ? Path.Combine(AppContext.BaseDirectory, "Exports")  // Mặc định: thư mục Exports trong thư mục ứng dụng
             : outputDirectory.Trim();
 
+        // Tạo thư mục nếu chưa tồn tại
         Directory.CreateDirectory(dir);
+        
+        // Tạo tên file với timestamp: Prefix_yyyyMMdd_HHmmss.extension
         return Path.Combine(dir, $"{prefix}_{DateTime.Now:yyyyMMdd_HHmmss}.{extension}");
     }
 
@@ -482,9 +577,9 @@ public sealed class ExportPrintService : IExportPrintService
         lines.Add("          PHIẾU PHA CHẾ");
         lines.Add("========================================");
         lines.Add(string.Empty);
-        lines.Add("╔════════════════════════════════════╗");
+        lines.Add("╔═══════════════════════════╗");
         lines.Add($"║   SỐ GỌI MÓN: {model.SoGoiMonHienThi,-20} ║");
-        lines.Add("╚════════════════════════════════════╝");
+        lines.Add("╚═══════════════════════════╝");
         lines.Add(string.Empty);
         lines.Add($"Mã hóa đơn: {model.MaHoaDonHienThi}");
         lines.Add($"Giờ order: {model.NgayBan:HH:mm:ss}");
@@ -568,41 +663,59 @@ public sealed class ExportPrintService : IExportPrintService
         }
     }
 
+    /// <summary>
+    /// HÀM TẠO HEADER CHO FILE TEXT/HÓA ĐƠN
+    /// Tạo các dòng header chứa thông tin quán:
+    /// - Tên quán
+    /// - Địa chỉ
+    /// - Số điện thoại
+    /// - Footer hóa đơn
+    /// </summary>
     private async Task<IReadOnlyList<string>> BuildHeaderLinesAsync(CancellationToken cancellationToken)
     {
+        // Nếu không có service cấu hình, dùng tên mặc định
         if (_cauHinhHeThongService is null)
         {
             return ["CoffeeShop.Wpf"];
         }
 
+        // Lấy cấu hình từ database
         var cauHinhResult = await _cauHinhHeThongService.GetCauHinhAsync(cancellationToken);
         if (!cauHinhResult.IsSuccess || cauHinhResult.Data is null)
         {
             return ["CoffeeShop.Wpf"];
         }
 
+        // Xây dựng danh sách dòng header
         var cauHinh = cauHinhResult.Data;
-        var lines = new List<string> { cauHinh.TenQuan };
+        var lines = new List<string> { cauHinh.TenQuan };  // Dòng đầu: Tên quán
 
+        // Thêm địa chỉ nếu có
         if (!string.IsNullOrWhiteSpace(cauHinh.DiaChi))
         {
             lines.Add($"Địa chỉ: {cauHinh.DiaChi}");
         }
 
+        // Thêm số điện thoại nếu có
         if (!string.IsNullOrWhiteSpace(cauHinh.SoDienThoai))
         {
             lines.Add($"SĐT: {cauHinh.SoDienThoai}");
         }
 
+        // Thêm footer hóa đơn nếu có
         if (!string.IsNullOrWhiteSpace(cauHinh.FooterHoaDon))
         {
             lines.Add(cauHinh.FooterHoaDon);
         }
 
-        lines.Add(string.Empty);
+        lines.Add(string.Empty);  // Dòng trống
         return lines;
     }
 
+    /// <summary>
+    /// HÀM LẤY CẤU HÌNH HỆ THỐNG (hoặc null nếu không có)
+    /// Dùng cho việc xuất PDF
+    /// </summary>
     private async Task<CauHinhHeThong?> GetCauHinhOrNullAsync(CancellationToken cancellationToken)
     {
         if (_cauHinhHeThongService is null)
@@ -614,6 +727,15 @@ public sealed class ExportPrintService : IExportPrintService
         return result.IsSuccess ? result.Data : null;
     }
 
+    /// <summary>
+    /// HÀM GHI LOG AUDIT
+    /// Ghi lại hành động của người dùng vào database
+    /// Nếu ghi log thất bại, không làm gián đoạn luồng chính
+    /// </summary>
+    /// <param name="nguoiDungId">ID người dùng</param>
+    /// <param name="hanhDong">Tên hành động (VD: "Xuất PDF báo cáo")</param>
+    /// <param name="doiTuong">Đối tượng thao tác (VD: "BaoCaoTheoNgay")</param>
+    /// <param name="duLieuTomTat">Tóm tắt dữ liệu</param>
     private async Task TryWriteAuditAsync(
         int? nguoiDungId,
         string hanhDong,
@@ -628,12 +750,13 @@ public sealed class ExportPrintService : IExportPrintService
                 hanhDong,
                 doiTuong,
                 duLieuTomTat,
-                Environment.MachineName,
+                Environment.MachineName,  // Tên máy tính
                 cancellationToken);
         }
         catch
         {
-            // Không chặn luồng xuất/in nếu ghi log thất bại.
+            // Không chặn luồng xuất/in nếu ghi log thất bại
+            // Việc xuất báo cáo vẫn thành công dù log thất bại
         }
     }
 }

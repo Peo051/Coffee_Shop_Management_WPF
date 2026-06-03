@@ -670,7 +670,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="THÀNH TOÁN"
+                            <TextBlock Text="THANH TOÁN"
                                        Foreground="White"
                                        FontSize="15"
                                        FontWeight="Bold"

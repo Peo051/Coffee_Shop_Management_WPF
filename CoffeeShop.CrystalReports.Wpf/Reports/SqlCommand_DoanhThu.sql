@@ -1,10 +1,3 @@
--- =============================================================
--- File này dùng để paste vào ô "Add Command" của Crystal Reports
--- khi chọn nguồn dữ liệu cho file CrystalDoanhThuTheoNgay.rpt.
---
--- Hai parameter {?TuNgay} và {?DenNgay} sẽ được Crystal Reports
--- hỏi tự động khi import command. Khai báo cùng kiểu Date.
--- =============================================================
 
 SELECT
     hdb.HoaDonBanId      AS MaHoaDon,

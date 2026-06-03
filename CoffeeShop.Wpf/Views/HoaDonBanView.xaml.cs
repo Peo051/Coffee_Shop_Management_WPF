@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Windows.Controls;
 using System.Windows.Navigation;
 
@@ -27,5 +27,10 @@ public partial class HoaDonBanView : UserControl
         {
             // Ignore errors opening browser
         }
+    }
+
+    private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+
     }
 }
